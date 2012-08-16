@@ -1,0 +1,6 @@
+/measure-*
+/data*.m
+/log
+/*.eps
+/program-*
+/program
