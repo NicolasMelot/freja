@@ -97,10 +97,10 @@ merge_data()
 {
 	info Merging all results of the same experiment together
 
-	echo $HEADER > $data$ext
+	echo -e $HEADER > $data$ext
 	echo %\ ${compile[@]}\ ${run[@]}\ $output >> $data$ext
-	cat data-$experiment-*.m|grep -v %|grep -v function >> $data$ext
-	echo $FOOTNOTE >> $data$ext
+	cat data-$experiment-*.m|grep -v %|grep -v function|grep -v ^x|grep -v end|grep -v ']' >> $data$ext
+	echo -e $FOOTNOTE >> $data$ext
 }
 
 compile()
@@ -160,7 +160,7 @@ batch()
 	# Initialize output file
 	start_time=`date +%s`
 	filename=$data-$experiment-`date|tr ' ' _|tr : -`$ext
-	echo $HEADER > $filename
+	echo -e $HEADER > $filename
 	echo %\ ${compile[@]}\ ${run[@]}\ $output >> $filename
 
 	batch_success=0
@@ -226,7 +226,7 @@ batch()
 	fi
 	
 	# Finalize output file
-	echo $FOOTNOTE >> $filename
+	echo -e $FOOTNOTE >> $filename
 	stop_time=`date +%s`
 	overall_time=$(($stop_time - start_time))
 	info $batch_outcome. Instances took $overall_time seconds \($(($overall_time / 60)) minutes or $(($overall_time / 60 / 60)) hours\) to run, or $(($overall_time / $total_instances)) seconds per instance run \($(($overall_time / $total_instances / 60)) minutes or $(($overall_time / $total_instances / 60 / 60)) hours\).

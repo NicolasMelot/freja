@@ -19,6 +19,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # $1-n are file holding the result of several experiments
+
+. ./settings
+
 args=("$@")
 output=`echo $@|tr ' ' '_'`.m
 
@@ -31,7 +34,7 @@ do
 done
 output=$output.m
 
-echo "function x = data() x = [" > $output
+echo -e $HEADER > $output
 echo -n "% experiment " >> $output
 cat $1|head -2|tail -1|tr -d '%' >> $output
 
@@ -54,6 +57,6 @@ do
 #	done	
 done
 
-echo "]; endfunction" >> $output
+echo -e $FOOTNOTE >> $output
 
 exit 0
