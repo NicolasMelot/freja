@@ -33,22 +33,22 @@
 %		paire of values represent the x point where a segment starts and
 %		stop. Each vector must be of length 2*n or the last value is ignored
 %		(cell of matrices or cell of vectors)
-%	index:	Indicates which row or which column in the matrices containes in data
+%	index	:Indicates which row or which column in the matrices containes in data
 %		contain the line description (scalar)
-%	transp:	If 0, reads rows in data. if not 0, read columns (scalar)
+%	invert:	If 0, reads rows in data. if not 0, read columns (scalar)
 %	colors:	Colors of the lines to draw. Each color is represented by either
 %		a string ('red', 'blue') or an RGB vector (cell of string and/or
 %		vectors).
-%	style:	Drawing style of segments: continuous ('-'), dashed ('--'), dotted
-%		(':'), dash-dot ('-.') or no line ('none') (string).
-%	marks:	Marks to draw at each ends of segment in the diagram
-%		plus '+', circles 'o', asterisks '*', points '.', crosses 'x',
-%		squares 's', diamonds 'd', upward-pointing triangle '^', downward-
-%		pointing triangle 'v', right-pointing triangle '>', left-pointing
-%		triangle '<', pentagram 'p', hexagram 'h' or none 'none' (cell of
-%		strings).
-%	markss:	Size of the marks (scalar).
-%	curvew:	Thickness of the curves on the graph (scalar)
+%	thickn:	Describe how large to draw segments. A value over 1 makes lines to
+%		overlap each other. A value lower than 0 is undefined behavior
+%		(scalar)
+%	ptrn:	Hatch pattern to draw (if any). Diagonals ('nwse'), other diagonals
+%		('swne'), horizontal ('hrzt'), vertical ('vert'), crosses ('cross')
+%		of squares ('sqrt') (string)
+%	ptrnst:	Pattern line style ('-' '--' ':' '-.' 'none') (string)
+%	ptrnc:	Color for hatches, similar to colors.
+%	ptrns:	Thickness of pattern lines (scalar)
+%	ptrnd:	Distance between two pattern lines (scalar)
 %	fontn:	Name of the font to use when writing legend, title and labelling
 %		axis. (string)
 %	fonts:	Font size of legend, title and axes label (scalar)
@@ -62,9 +62,9 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickgantt(fignum, data, line_nm, invert, colors, thickn, pattern, pattern_style, patternc, patterns, patternd, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, outf, format)
+function quickgantt(fignum, data, index, invert, colors, thickn, ptrn, ptrnst, ptrnc, ptrns, ptrnd, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, outf, format)
 
-patternd = patternd / 100;
+ptrnd = ptrnd / 100;
 figure(fignum);
 hold on;
 
@@ -75,36 +75,36 @@ num_diagram = size(data)(2);
 ylim([0 num_diagram + 1]);
 for i=1:num_diagram
 	if(invert == 0)
-		xx = data{i}(line_nm,:);
+		xx = data{i}(index,:);
 	else
-		xx = data{i}'(line_nm,:);
+		xx = data{i}'(index,:);
 	end
 
 	size_xx = size(xx)(2) / 2;
 
 	for j=1:size_xx 
-		index = 2 * (j - 1) + 1;
+		shift = 2 * (j - 1) + 1;
 
 		if j == 1 && i == 1
-			xmin = xx(index);
-			xmax = xx(index + 1);
+			xmin = xx(shift);
+			xmax = xx(shift + 1);
 		end
-		line_end = xx(index + 1);
-		xmin = min(xx(index), xmin);
-		xmax = max(xx(index + 1), xmax);
+		line_end = xx(shift + 1);
+		xmin = min(xx(shift), xmin);
+		xmax = max(xx(shift + 1), xmax);
 
-		handle{i}(j) = patch([xx(index) xx(index) xx(index + 1) xx(index + 1)]', [i + thickn / 2 i - thickn / 2 i - thickn / 2 i + thickn / 2]', colors{i});
-		set(handle{i}(j), 'EdgeColor', patternc{i});
+		handle{i}(j) = patch([xx(shift) xx(shift) xx(shift + 1) xx(shift + 1)]', [i + thickn / 2 i - thickn / 2 i - thickn / 2 i + thickn / 2]', colors{i});
+		set(handle{i}(j), 'EdgeColor', ptrnc{i});
 		set(handle{i}(j), 'FaceColor', colors{i});
-		set(handle{i}(j), 'LineStyle', pattern_style{i});
-		set(handle{i}(j), 'LineWidth', patterns);
+		set(handle{i}(j), 'LineStyle', ptrnst{i});
+		set(handle{i}(j), 'LineWidth', ptrns);
 	end
 	length = xmax - xmin;
 end
 
 % Now the hatching frame is defined, we can safely apply hatches without hatch distance headache
 for i=1:num_diagram
-	hatch(handle{i}, pattern{i}, patternc{i}, pattern_style{i}, patternd, patterns);
+	hatch(handle{i}, ptrn{i}, ptrnc{i}, ptrnst{i}, ptrnd, ptrns);
 end
 
 g_title = title(grapht);
@@ -124,7 +124,8 @@ set(g_title, 'fontsize', fonts);
 set (findobj (gcf, '-property', 'fontname'), 'fontname', fontn);
 set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
 
-set(gca, 'Ytick', [0:num_diagram + 1], 'YTickLabel', {'', graphl{1:num_diagram}, ''}, 'Ylim', [0 num_diagram + 1], 'Xlim', [xmin xmax]);
+set(gca, 'Ytick', [0:num_diagram + 1], 'YTickLabel', {'', graphl{1:num_diagram}, ''}, 'Ylim', [0 num_diagram + 1]);
+%set(gca, 'Ytick', [0:num_diagram + 1], 'YTickLabel', {'', graphl{1:num_diagram}, ''}, 'Ylim', [0 num_diagram + 1], 'Xlim', [xmin xmax]);
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 
