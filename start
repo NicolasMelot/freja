@@ -101,10 +101,13 @@ merge_data()
 {
 	info Merging all results of the same experiment together
 
-	echo -e $HEADER > $data$ext
-	echo %\ ${compile[@]}\ ${run[@]}\ $output >> $data$ext
-	cat data-$experiment-*.m|grep -v %|grep -v function|grep -v ^x|grep -v end|grep -v ']' >> $data$ext
-	echo -e $FOOTNOTE >> $data$ext
+	echo -e $DATA_BEGIN > $data$ext
+	ls data-$experiment-*.m|while read file; do echo %\ $file; cat $file|grep -v function|grep -v ^x|grep -v end|grep -v ']'|grep -v '}'|grep -v ^$|grep -v \'; done >> $data$ext
+	echo -e $DATA_END >> $data$ext
+
+	echo -e $COLUMNS_BEGIN >> $data$ext
+	echo ${compile[@]}\ ${run[@]}\ $output|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $data$ext
+	echo -e $COLUMNS_END >> $data$ext
 }
 
 compile()
@@ -175,8 +178,7 @@ batch()
 	start_time=`date +%s`
 	filename=$data-$experiment-`date|tr ' ' _|tr : -`$ext
 
-	echo -e $HEADER > $filename
-	echo %\ ${compile[@]}\ ${run[@]}\ $output >> $filename
+	echo -e $DATA_BEGIN > $filename
 
 	batch_success=0
 	compile_counter=0
@@ -259,7 +261,10 @@ batch()
 	fi
 
 	# Finalize output file
-	echo -e $FOOTNOTE >> $filename
+	echo -e $DATA_END >> $filename
+	echo -e $COLUMNS_BEGIN >> $filename
+	echo ${compile[@]}\ ${run[@]}\ $output|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $filename
+	echo -e $COLUMNS_END >> $filename
 
 	stop_time=`date +%s`
 	overall_time=$(($stop_time - start_time))

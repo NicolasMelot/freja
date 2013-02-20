@@ -29,13 +29,13 @@
 %	
 %	
 %	Parameters:
-%	col:	Column index where the result will be written (scalar)
-%	row:	Row being process by this call to the function (vector)
+%	row:	Row being process by this call to the function (one line table)
+%	col:	Column where the result will be written (string)
 %	out:	The new value to be written to the row (scalar).
 
-function y = time_difference_global(col, row)
+function y = time_difference_global(row, col)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-	y = (((row(7) - row(5)) * NSEC_IN_SEC + row(8) - row(6))) / NSEC_IN_MSEC;
+	y = (((data(row, {'stop_time_sec'}, 0) - data(row, {'start_time_sec'}, 0)) * NSEC_IN_SEC + data(row, {'stop_time_nsec'}, 0) - data(row, {'start_time_nsec'}, 0))) / NSEC_IN_MSEC;
 end

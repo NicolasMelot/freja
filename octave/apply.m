@@ -25,12 +25,12 @@
 %	
 %	
 %	Parameters:
-%	matrix:	The matrix to apply the function to (matrix)
-%	column:	Column index of the matrix where the outputs are written (scalar)
+%	table:	The table containing data to apply the function to (table)
+%	col:	Column index of the matrix where the outputs are written (string)
 %	func:	The function to apply to the matrix (pointer to function).
 %		Usually a user-defined function denoted by @<function_name>.
 %		The function must take the followin signature:
-%		function y = <function_name(column, row)
+%		function y = <function_name>(column, row)
 %		where:
 %			column in the index of the column where output is written (scalar)
 %			row is a vector where is copied the row to which the function
@@ -38,21 +38,22 @@
 %			y is the output value (scalar)
 %	out:	The matrix after computation
 
-function out = apply(matrix, column, func)
-% matrix: manipulated matrix
-% culumn: column to be transformed
-% func_ptr: function to be called. function pointed must be of the form (<line number being processed>(scalar), <line data>(vector))
-size_matrix = size(matrix);
-size_x = size_matrix(2);
+function out = apply(table, col, func)
+size_matrix = size(table{1});
 size_y = size_matrix(1);
 
+out{1} = table{1};
+out{2} = table{2};
+
 for i = 1:size_y
-	for j = 1:size_x
-		if j == column
-			out(i, j) = func(column, matrix(i, :));
-		else
-			out(i, j) = matrix(i, j);
-		end
+	index = cellfindstr(table{2}, col);
+	if index > 0
+		line{1} = table{1}(i, :);
+		line{2} = table{2};
+		out{1}(i, index) = func(line, col);
+	else
+		error(['Couldn''t find column ''' col '''.']);
 	end
 end
 end
+

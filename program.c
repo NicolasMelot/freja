@@ -166,6 +166,11 @@ main(int argc, char ** argv)
       (int)thread_stop.tv_sec, thread_stop.tv_nsec);
 #endif
 #endif
+  if(NB_THREADS == 2)
+  {
+    return 1;
+  }
 
+  // Always report a successful experiment
   return 0;
 }

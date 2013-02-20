@@ -25,10 +25,10 @@ output="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec threa
 
 compile=(entropy nb_threads)
 entropy="0.1"				# Randomness in the calculation time
-nb_threads=`seq 0 8`
+nb_threads=`seq 0 3`
 
 run=(ct try)
 
-ct="100000000 200000000"		# amount of data to be written to main memory
-try=`seq 1 10`				# Number of different run per setting
+ct="10000000 20000000"		# amount of data to be written to main memory
+try=`seq 1 2`				# Number of different run per setting
 

@@ -29,11 +29,11 @@
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
 %	data:	Matrix containing x and y values to be plotted (matrix).
-%	data_x:	Index in the input matrix (data) where the x axis values are 
+%	colx:	Column in the input figure (data) where the x axis values are 
 %		recorded (scalar).
-%	data_y:	Index in the input matrix (data) where the x axis values are 
+%	coly:	Column in the input figure (data) where the x axis values are 
 %		recorded (scalar).
-%	error:	Base value from which the bar of the histogram start. This
+%	err:	Base value from which the bar of the histogram start. This
 %		shifts up or down the y value to be plotted. When y values are
 %		high or zeros, a base of -1 makes possible to see bars
 %		representing a zero (scalar).
@@ -58,28 +58,46 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickerrorbar(fignum, data, data_x, data_y, error, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickerrorbar(fignum, table, colx, coly, err, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+
+data = table{1, 1};
+data_x = cellfindstr(data{2}, colx);
+if data_x < 1
+	error(['Could not find column ''' colx ''' in table.']);
+end
+data_y = cellfindstr(data{2}, coly);
+if data_y < 1
+	error(['Could not find column ''' coly ''' in table.']);
+end
+error = cellfindstr(data{2}, err);
+if err < 1
+	error(['Could not find column ''' err ''' in table.']);
+end
 
 % Disable window popups when generating a new graph
-set (0, 'defaultfigurevisible', 'off') 
+set (0, 'defaultfigurevisible', 'off');
 
 y_marging = 10;
 figure(fignum);
 
-plotting(1) = errorbar(data{1, 1}(:,data_x), data{1, 1}(:, data_y), data{1, 1}(:, error));
+data = table{1, 1};
+data = data{1};
+plotting(1) = errorbar(data(:, data_x), data(:, data_y), data(:, error));
 set(plotting(1), 'marker', marks{1, 1});
 set(plotting(1), 'markersize', markss);
 set(plotting(1), 'linewidth', curvew);
 set(plotting(1), 'color', colors{1, 1});
 hold on;
 
-max_value = max(data{1, 1}(:, data_y) + data{1, 1}(:, error));
-min_value = min(data{1, 1}(:, data_y) - data{1, 1}(:, error));
+max_value = max(data(:, data_y) + data(:, error));
+min_value = min(data(:, data_y) - data(:, error));
 
-maxi = size(data);
+maxi = size(table);
 maxi = maxi(2);
 for i = 2:maxi
-	plotting(i) = errorbar(data{1, i}(:, data_x), data{1, i}(:, data_y), data{1, i}(:, error));
+	data = table{1, i};
+	data = data{1};
+	plotting(i) = errorbar(data(:, data_x), data(:, data_y), data(:, error));
 
 	max_value = max(max_value, max(data{1, i}(:, data_y) + data{1, i}(:, error)));
 	min_value = min(min_value, min(data{1, i}(:, data_y) - data{1, i}(:, error)));
@@ -112,6 +130,6 @@ set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 
 hold off;
-set (0, 'defaultfigurevisible', 'on') 
+set (0, 'defaultfigurevisible', 'on');
 	
 end

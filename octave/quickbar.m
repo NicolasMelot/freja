@@ -32,10 +32,10 @@
 %	fignum:	Figure number. A figure of the same number as one or several
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
-%	data:	Matrix containing x and y values to be plotted (matrix).
-%	data_x:	Index in the input matrix (data) where the x axis values are 
+%	table:	Matrix containing x and y values to be plotted (matrix).
+%	colx:	Index in the input matrix (data) where the x axis values are 
 %		recorded (scalar).
-%	data_y:	Index in the input matrix (data) where the x axis values are 
+%	coly:	Index in the input matrix (data) where the x axis values are 
 %		recorded (scalar).
 %	base:	Base value from which the bar of the histogram start. This
 %		shifts up or down the y value to be plotted. When y values are
@@ -58,20 +58,42 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickbar(fignum, data, data_x, data_y, base, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickbar(fignum, table, colx, coly, base, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+
+%collect = table{1, 1};
+data_x = cellfindstr(table{2}, colx);
+if data_x < 1
+	error(['Cound not find column ''' colx ''' in table.']);
+end
+data_y = cellfindstr(table{2}, coly);
+if data_y < 1
+	error(['Cound not find column ''' coly ''' in table.']);
+end
 
 y_marging = 10;
 figure(fignum);
 
-x = reduce(groupby(data(:, data_x), [1]), {@mean});
-data = extend(data, [data_x], [data_x], base);
-data = groupby(data, [data_x]);
-y = data{1,1}(:, data_y);
+da = table{1};
+x = merge(separate(da(:, data_x), [1]), {@mean})
+da = extend(da, [data_x], [data_x], base)
+da = separate(da, [da_x])
+y = da{1,1}(:, data_y)
 
-maxi = size(data);
+maxi = size(da);
 maxi = maxi(2);
 for i = 2:maxi
-	y = [y data{1, i}(:, data_y)];
+	y = [y da{1, i}(:, data_y)]
+end
+
+x = data(groupby(select(table, {colx}), {colx}, {}, {@mean}), {colx}, 0)
+collect = extend(table, {colx}, {colx}, base);
+collect = groupby(collect, {colx}, {}, {@mean})
+y = data(collect, {coly}, 0)
+
+maxi = size(collect);
+maxi = maxi(2);
+for i = 2:maxi
+	y = [y data(table, {coly}, 0)]
 end
 
 hold on;
@@ -106,4 +128,96 @@ print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num
 hold off;
 set (0, 'defaultfigurevisible', 'on')
 	
+end
+
+function out = separate(matrix, col)
+nb_col = size(col);
+nb_col = nb_col(2);
+
+% Warm-up
+old_size = 1;
+old_recipient = {matrix};
+
+for i = 1:nb_col
+	new_recipient = {};
+	new_size = 0;
+
+	for j = 1:old_size
+		% sort the matrix regarding the current column
+		mat = sortrows(old_recipient{j}, col(1, i));
+
+		% The matrix is copied from the old container to the new container
+		% beginning with first line
+		new_size = new_size + 1;
+		new_recipient{new_size}(1, :) = mat(1, :);
+		new_mat_size = 2;
+
+		% Browse the rest of the matrix and copy its rows in the new recipient
+		size_mat = size(mat);
+        size_mat = size_mat(1);
+		key = mat(1, col(1, i));
+		for k = 2:size_mat
+			% If a new key has been found
+			if mat(k, col(1, i)) ~= key
+				new_size = new_size + 1; % increment the size of new_recipient
+				new_mat_size = 1; % reset the new matrix' size
+				
+				% Update the key
+				key = mat(k, col(1, i));
+			end
+
+			% Copy another matrix row into the new matrix
+			new_recipient{new_size}(new_mat_size, :) = mat(k, :);
+			new_mat_size = new_mat_size + 1;
+		end
+	end
+
+	% Get ready for a new recursion step
+	old_recipient = new_recipient;
+	old_size = new_size;
+end
+
+out = old_recipient;
+
+end
+
+function out = merge(matrix, group, copy, value)
+sep = groupby(matrix, group);
+max_size=0;
+max_index=0;
+
+maxi = size(sep);
+maxi = maxi(2);
+
+for i = 1:maxi
+    size_sep = size(sep{i});
+	if size_sep(1) > max_size
+		max_size = size_sep(1);
+		max_index = i;
+	end
+end
+
+out=[];
+
+for i = 1:maxi
+    size_sep = size(sep{i});
+	height = max_size - size_sep(1);
+	width = size_sep(2);
+	append = [sep{i}; zeros(height, width)];
+
+    maxj = size(copy);
+    maxj = maxj(2);
+	for j = 1:maxj
+		append(:, copy(j)) = sep{max_index}(1:max_size, copy(j));		
+    end
+
+    maxj = size(group);
+    maxj = maxj(2);
+	for j = 1:maxj
+		append(:, group(j)) = sep{i}(1, group(j));
+	end
+
+	out = [out; append];
+end
+
 end

@@ -25,49 +25,92 @@
 %	columns of these dummy rows take the value of the same column in the 
 %	original rows if the column is part of the group definition or the value of
 %	parameter value if they don't. The values of columns defined by the
-%	parametercopy are copied from the biggest group to all other extended
+%	parameter cpy are copied from the biggest group to all other extended
 %	groups.
-%	This function is usefull to present data at value zero when they were non
-%	existant or relevant in the original experiment. For instance, to show the
+%	This function is useful to present data at value zero when they were non
+%	existant or relevant in the original data. For instance, to show the
 %	work of threads 3 and 4 where experiments only involved 2 threads in some
 %	cases and 4 threads in other cases.
 %	
 %	
 %	Parameters:
-%	matrix:	The matrix to be filtered (matrix)
-%	group:	Indexes of columns to defining the group (vector).
-%	copy:	Indexes of columns to be copied from the biggest group to all other
-%		groups (vector). Be careful when choosing the columns to be copied,
-%		not to make it to erase important data in smaller groups.
-%	value:	The value to copy to all other columns (columns that do not not
+%	table:	Table whose groups need extensions (table)
+%	group:	Columns to defining the group (cell of strings).
+%	copy:	Columns to be copied from the biggest group to all other groups.
+%		Be careful when choosing the columns to be copied, not to make it
+%		to erase important data in smaller groups (cell of strings).
+%	value:	The value to copy to all other columns (columns that do not 
 %		define the groups or that are not copied from the biggest group
 %		(scalar).
 %	out:	The output matrix with all dummy rows added.
 %
 %	Example:
-%	a = [1 1 3 4; 1 2 7 8; 1 1 5 6; 2 3 3 9; 2 3 5 5 ; 1 2 7 7]
-%	a = [
-%		1 1 3 4 ;
-%		1 2 7 8 ;
-%		1 1 5 6 ;
-%		2 3 3 9 ;
-%		2 3 5 5 ;
-%		1 2 7 7 ;
-%	]
-%	b = extend(a, [1], [2], 0)
-%	b = [
-%		1 1 3 4 ;
-%		1 2 7 8 ;
-%		1 1 5 6 ;
-%		1 2 7 7 ;
-%		2 1 3 9 ;
-%		2 2 5 5 ;
-%		2 1 0 0 ;
-%		2 2 0 0 ;
-%	]
+%	a = {
+%	      [1,1] =
+%		1 1 3 4
+%		1 2 7 8
+%		1 1 5 6
+%		2 3 3 9
+%		2 3 5 5
+%		1 2 7 7
+%
+%	      [1,2] =
+%		col1
+%		col2
+%		col3
+%		col4
+%	}
+%	b = extend(a, {'col1'}, {'col2'}, 0)
+%	b = {
+%	      [1,1] =
+%		1 1 3 4
+%		1 2 7 8
+%		1 1 5 6
+%		1 2 7 7
+%		2 1 3 9
+%		2 2 5 5
+%		2 1 0 0
+%		2 2 0 0
+%
+%	      [1,2] =
+%		col1
+%		col2
+%		col3
+%		col4
+%	}
 
-function out = extend(matrix, group, copy, value)
-sep = groupby(matrix, group);
+function out = extend(table, grp, cpy, value)
+
+% Compute inputs to older version signatures
+% Gets data into matrix
+matrix = table{1};
+coln = table{2};
+
+% Compute group indexes
+size_grp = size(grp);
+size_grp = size_grp(2);
+for i = 1:size_grp
+	index = cellfindstr(coln, grp{i});
+	if index > 0
+		group(i) = index;
+	else
+		error(['Could not find column ''' coln{i} ''' in table.']);
+	end
+end
+
+% Compute copy indexes
+size_cpy = size(cpy);
+size_cpy = size_cpy(2);
+for i = 1:size_cpy
+	index = cellfindstr(coln, cpy{i});
+	if index > 0
+		copy(i) = index;
+	else
+		error(['Could not find column ''' coln{i} ''' in table.']);
+	end
+end
+
+sep = separate(matrix, group);
 max_size=0;
 max_index=0;
 
@@ -82,7 +125,7 @@ for i = 1:maxi
 	end
 end
 
-out=[];
+data=[];
 
 for i = 1:maxi
     size_sep = size(sep{i});
@@ -102,7 +145,61 @@ for i = 1:maxi
 		append(:, group(j)) = sep{i}(1, group(j));
 	end
 
-	out = [out; append];
+	data = [data; append];
 end
+
+out{1} = data;
+out{2} = coln;
+
+end
+
+function out = separate(matrix, col)
+nb_col = size(col);
+nb_col = nb_col(2);
+
+% Warm-up
+old_size = 1;
+old_recipient = {matrix};
+
+for i = 1:nb_col
+	new_recipient = {};
+	new_size = 0;
+
+	for j = 1:old_size
+		% sort the matrix regarding the current column
+		mat = sortrows(old_recipient{j}, col(1, i));
+
+		% The matrix is copied from the old container to the new container
+		% beginning with first line
+		new_size = new_size + 1;
+		new_recipient{new_size}(1, :) = mat(1, :);
+		new_mat_size = 2;
+
+		% Browse the rest of the matrix and copy its rows in the new recipient
+		size_mat = size(mat);
+        size_mat = size_mat(1);
+		key = mat(1, col(1, i));
+		for k = 2:size_mat
+			% If a new key has been found
+			if mat(k, col(1, i)) ~= key
+				new_size = new_size + 1; % increment the size of new_recipient
+				new_mat_size = 1; % reset the new matrix' size
+				
+				% Update the key
+				key = mat(k, col(1, i));
+			end
+
+			% Copy another matrix row into the new matrix
+			new_recipient{new_size}(new_mat_size, :) = mat(k, :);
+			new_mat_size = new_mat_size + 1;
+		end
+	end
+
+	% Get ready for a new recursion step
+	old_recipient = new_recipient;
+	old_size = new_size;
+end
+
+out = old_recipient;
 
 end

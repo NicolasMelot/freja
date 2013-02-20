@@ -20,55 +20,70 @@
 %
 %	Function groupby
 %
-%	Separate rows of matrix into groups within which the set of values in
-%	given columns are identical in every row, but bifferent between rows of
-%	different groups. A group takes shape in a smaller matrix. Each row of
-%	the original matrix is mapped to exactly one group. All groups can then
-%	be reduced to one row then merged together into a single matrix thanks
-%	to the function reduce(). The rows within a group keep the same order as
-%	they had in the input matrix.
+%	Separate rows of a table into groups within which the set of values in
+%	given columns are identical in every row, but different between rows of
+%	different groups. A group takes shape of a subset data of the whole
+%	table's data. Each row of the original table is mapped to exactly one
+%	group. All groups can then be reduced to one row then merged together
+%	into a single matrix thanks to the function reduce(). The rows within a
+%	group keep the same order as they had in the input matrix.
 %	
 %	
 %	Parameters:
-%	matrix:	The matrix to be separated separate into groups (matrix)
-%	col:	The column indexes that are taken into account when forming
-%		groups (vector).
-%	out:	All groups of rows (cell array of matrices)
+%	table:	Table to be separated separate into groups (matrix)
+%	coln:	Column names taken into account when forming
+%		groups (cell of strings).
+%	apply:	Column names on which to apply a function (cell of strings).
+%	func:	Functions to apply to previously mentioned columns. This function
+%		should take a vector as input and output a scalar; @mean and @std
+%		are suitable. Note that columns that do not appear in col or apply
+%		parameters are undefined and can be removed (cell of function
+%		pointers).
+%	out:	The table so transformed (table)
 %
 %	Example:
-%	a = [1 1 3 4; 1 2 7 8; 1 1 5 6; 2 3 3 9; 2 3 5 5 ; 1 2 7 7]
-%	a = [
-%		1 1 3 4 ;
-%		1 2 7 8 ;
-%		1 1 5 6 ;
-%		2 3 3 9 ;
-%		2 3 5 5 ;
-%		1 2 7 7 ;
-%	]
-%	b = groupby(a, [1 2])
+%	a = {
+%	      [1,1] =
+%		1 1 3 4
+%		1 2 7 8
+%		1 1 5 6
+%		2 3 3 9
+%		2 3 5 5
+%		1 2 7 7
+%
+%	      [1,2] =
+%		col1
+%		col2
+%		col3
+%		col4
+%	}
+%	b = groupby(a, {'col1' 'col2'}, {'col3'}, {@mean})
 %	b = {
-%		[1,1] = [
-%			1 1 3 4 ;
-%			1 1 5 6 ;
-%		]
-%		[1,2] = [
-%			1 2 7 8 ;
-%			1 2 7 7 ;
-%		]
-%		[1,3] = [
-%			2 3 3 9 ;
-%			2 3 5 5 ;
-%		]
+%	      [1,1] =
+%		1 1 4 undef
+%		1 2 7 undef
+%		2 3 4 undef
+%
+%	      [1,2] =
+%		col1
+%		col2
+%		col3
+%		col4
 %	}
 
-function out = groupby(matrix, col)
+function out = groupby(table, coln, apply, func)
 
-% returns several matrices separated into groups where the value of all given col are identical. The matrix is sorted in acending order in the priority given by col
-%
-% cell_array = groupby(matrix, vector);
-%
-% only one line of vector col is taken into account
+coln_size = size(coln);
+coln_size = coln_size(2);
 
+for i=1:coln_size
+	col(i) = cellfindstr(table{2}, coln{i});
+	if col(i) < 1
+		error(['Could not find column ''' coln{i} ''' in table.']);
+	end
+end
+
+matrix = table{1};
 nb_col = size(col);
 nb_col = nb_col(2);
 
@@ -115,6 +130,31 @@ for i = 1:nb_col
 	old_size = new_size;
 end
 
-out = old_recipient;
+% now old_recipient holds separated data into groups, let's reduce it into as much lines
+size_grp = size(old_recipient);
+size_grp = size_grp(2);
+
+coln_size = size(coln);
+coln_size = coln_size(2);
+
+apply_size = size(apply);
+apply_size = apply_size(2);
+
+out_col = {coln{:} apply{:}};
+
+for i = 1:size_grp
+	for j = 1:coln_size
+		index = cellfindstr(table{2}, coln{j});
+		line(1, j) = old_recipient{i}(1, index);
+	end
+	for j = 1:apply_size
+		index = cellfindstr(table{2}, apply{j});
+		line(1, j + coln_size) = func{j}(old_recipient{i}(:, index));
+	end
+	data(i, :) = line;
+end
+
+out{1} = data;
+out{2} = out_col;
 
 end

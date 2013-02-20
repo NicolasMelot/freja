@@ -29,13 +29,14 @@
 %	
 %	
 %	Parameters:
-%	col:	Column index where the result will be written (scalar)
-%	row:	Row being process by this call to the function (vector)
+%	row:	Row being process by this call to the function (one line table)
+%	col:	Column where the result will be written (string)
 %	out:	The new value to be written to the row (scalar).
 
-function y = time_difference_thread(col, row)
+function y = time_difference_thread(row, col)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-	y = (((row(12) - row(10)) * NSEC_IN_SEC + row(13) - row(11))) / NSEC_IN_MSEC;
+% entropy nb_threads ct try thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec
+	y = (((data(row, {'thread_stop_sec'}, 0) - data(row, {'thread_start_sec'}, 0)) * NSEC_IN_SEC + data(row, {'thread_stop_nsec'}, 0) - data(row, {'thread_start_nsec'}, 0))) / NSEC_IN_MSEC;
 end

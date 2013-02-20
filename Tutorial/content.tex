@@ -1,3 +1,9 @@
+% TODO: 
+% * Mention rdtsc() as replacement for a clock DONE
+% * Update run and compile to return a success or failure value DONE
+% * Clarify in case study: entropy parameter is only an illusrative artificial parameter to create randomness in measurements DONE
+% * Update data format description in data.m UNREQUIRED
+
 \section{Introduction}
 Measuring and representing the performance of an algorithm represents quite a tedious task. Such activity requires a constant monitoring and intervention to collect data from an experiment, start the next one and check if everything works as expected. Such constant attention is error-prone. Once the data has been fully collected, it is often cumbersome and also error-prone to reshape it to a meaningful format such as a graph, or a format allowing the computation of such graph. There are many benefits in automatizing this process: making it autonomous, more reliable or faster.
 
@@ -39,7 +45,7 @@ Respectively Octave and Matlab specializations of data manipulation scripts, use
 \section{The problem}
 \label{sec:problem}
 % Introduce the computation problem to be monitored and the way it has been paralellized
-Suppose an algorithm that achieves some work in a sequential fashion, for instance the code shown in Fig.\ref{fig:do_some_work}. This sequential algorithm must be compared to an equivalent, parallel version. The parallelization of this algorithm is achieved through the division of $count$ by the number of threads employed, and every thread runs the loop with this new value of $count$. The parallel version must show good scaling properties with the number of threads employed, and demonstrate an efficient use of them. This requires the computation load to be equally spread among the threads available; in other words, all threads must compute for a roughly equivalent period of time. Both global and per-thread computation time must be recorded and shown in a representation similar to Fig.\ref{fig:timing-200}. On this figure are represented the global computation time (red curve) as a function of number of threads, as well as individual threads' computation time for every situation, using the sequential algorithm or its parallel version using one to eight threads (the parallel version with one thread shows the overhead of parallelization). Both sequential and parallel implementations are available in appendices \ref{app:sequential} and \ref{app:parallel}, respectively. These implementations introduce 3 settings: the number of threads to use (degree of parallelism), the number of jumps the program must do (that models the size of the problem) and the entropy in performance (simulates performance variations due to the context in which the program is run, given the operating system for instance). Each of these settings take their value from $\mathbb{N}$, $\mathbb{R}$ and $\left[0;1\right]$, respectively. Consequently, all variants of the algorithm are contained in a 3-dimensions space. Section~\ref{sec:process} explain the process to obtain a figure such as Fig.\ref{fig:timing-200}.
+Suppose an algorithm that achieves some work in a sequential fashion, for instance the code shown in Fig.\ref{fig:do_some_work}. This sequential algorithm must be compared to an equivalent, parallel version. The parallelization of this algorithm is achieved through the division of $count$ by the number of threads employed, and every thread runs the loop with this new value of $count$. Since this example is very simple, the performance measurement reveal few differences from run to run. Not only this is usually not the case, but it alos prevent the illustration of the standard deviation plotting capability of this tool. Therefore $count$ variates more or less, randomeley, along another property named $entropy$, which models this missing performance randomness from run to run. The parallel implementation must show good scaling properties with the number of threads employed, and demonstrate an efficient use of them. This requires the computation load to be equally spread among the threads available; in other words, all threads must compute for a roughly equivalent period of time. Both global and per-thread computation time must be recorded and shown in a representation similar to Fig.\ref{fig:timing-200}. On this figure are represented the global computation time (red curve) as a function of number of threads, as well as individual threads' computation time for every situation, using the sequential algorithm or its parallel version using one to eight threads (the parallel version with one thread shows the overhead of parallelization). Both sequential and parallel implementations are available in appendices \ref{app:sequential} and \ref{app:parallel}, respectively. These implementations introduce 3 settings: the number of threads to use (degree of parallelism), the number of jumps the program must do (that models the size of the problem) and the entropy in performance described above. Each of these settings take their value from $\mathbb{N}$, $\mathbb{R}$ and $\left[0;1\right]$, respectively. Consequently, all variants of the algorithm are contained in a 3 dimensions space. Section~\ref{sec:process} explain the process to obtain a figure such as Fig.\ref{fig:timing-200}.
 
 \begin{figure}
 \centering
@@ -168,6 +174,7 @@ In order to calculate the time taken to execute a portion of code, $clock\_getti
 #endif
 #endif
 
+  // Always report a successful experiment
   return 0;
 }
 \end{lstlisting}
@@ -178,7 +185,7 @@ In order to calculate the time taken to execute a portion of code, $clock\_getti
 \subsubsection{Choosing the right clock}
 \label{app:clock}
 
-In the figures~\ref{fig:monotonic} and \ref{fig:thread}, the same program has been compiled using the same settings, run on the same machine with the same input. Each variant has been run the same amount of time and the same script has been use to generate the plots. The only difference lies in the clock that has been used to measure the performance. The machine on which these two experiments have been run offers two cores. The difference in the measurement starts with the third core: in Fig.\ref{fig:monotonic}, the clock used to measure the execution time is global, and measures the real time. The clock used in Fig.\ref{fig:thread} considers the time as the number of processor clock ticks that was given to threads, not real time. As the machine only offers 2 cores, a third thread has to share its core with another thread, thus making CLOCK\_THREAD\_CPUTIME\_ID unsynchronized with real time.
+In the figures~\ref{fig:monotonic} and \ref{fig:thread}, the same program has been compiled using the same settings, run on the same machine with the same input. Each variant has been run the same amount of time and the same script has been use to generate the plots. The only difference lies in the clock that has been used to measure the performance. The machine on which these two experiments have been run offers two cores. The difference in the measurement starts with the third core: in Fig.\ref{fig:monotonic}, the clock used to measure the execution time is global, and measures the real time. The clock used in Fig.\ref{fig:thread} considers the time as the number of processor clock ticks that was given to threads, not real time. As the machine only offers 2 cores, a third thread has to share its core with another thread, thus making CLOCK\_THREAD\_CPUTIME\_ID unsynchronized with real time. Notice one can use other processor or OS-provided functions to measure time. As an example, $rdtsc()$ takes profit of registers available on x86 archtectures from Pentium and returns on 64 bits the number of clock cycles elapsed since last processor reset. Figure~\ref{fig:rdtsc} shows an implementation taking profit of the relevant register in a function a regular C program can use.
 
 \begin{figure}
 \centering
@@ -240,6 +247,27 @@ thread_do_some_work(void* arg)
 \label{fig:thread}
 \end{figure}
 
+\begin{figure}
+\centering
+\begin{lstlisting}
+#ifdef __i386
+extern __inline__ uint64_t rdtsc() {
+  uint64_t x;
+  __asm__ volatile ("rdtsc" : "=A" (x));
+  return x;
+}
+#elif defined __amd64
+extern __inline__ uint64_t rdtsc() {
+  uint64_t a, d;
+  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
+  return (d<<32) | a;
+}
+#endif
+\end{lstlisting}
+\caption{C inline assembly implementation of rdtsc using hardware registers.}
+\label{fig:rdtsc}
+\end{figure}
+
 \subsubsection{Output the data collected}
 
 The program whose performance is monitored must report the data in a specific way, that allows the expression of any numeric data measured. This data must take the shape of a matrix, which is represented by its values separated by a space, as shown in figure~\ref{fig:output}. In this matrix, each column represents a value of a feature measured, or information related to that value (such as the thread id corresponding to a thread's execution time). A line represents a feature's instance (one line per thread). This is the case in this example.
@@ -263,6 +291,8 @@ Notice that the four columns from 2 to 5 are identical in every line, as this in
 \caption{Format the data must take when output from an instrumented program.}
 \label{fig:output}
 \end{figure}
+
+Once data is produced or in case of any failure, it is important to exit the program with a relevant exit value (\emph{return 0}). Returning 0 reports a run to work as expected and output to be taken into account. A return value different than 0 denotes a unsuccessful run and will make the batch to discard output produced. See section~\ref{sec:run} for more details about return values and the way they are handled.
 
 %The collected data must be forwarded to the scripts managing the experiment through I/O:s, usually by writing them on the screen or to a file. Such operation must be performed with caution, as I/O:s are very slow and may affect the performance measurement. This can happen when some threads output the data they collected when the global performance are still measured. Instead of writing these results through an I/O, it is more advisable to store them in memory and output them at the end of the program execution, when all timing measurements are finished and performance penalties are not important anymore, as shown in Fig.~\ref{fig:instrumentation}. However, read and write operations to main memory can also be slow and hinder the performance when measuring them. This effect can be minimized by using much faster memories such as caches, but such memories are also typically small, shared with the algorithm being measured and required by this algorithm to perform faster. Select carefully the data to be collected in order to reduce the necessary memory to store them and reduce the impact on the algorithm's performance. There is no solution to eliminate all influence on performance when collecting data, but this effect can and should be lowered at most.
 % Collect start and stop time, using clock_gettime with its different clocks
@@ -300,7 +330,7 @@ CFLAGS=-g -O0 -Wall -lrt -pthread -DMEASURE\t
 \label{fig:makefile}
 \end{figure}
 
-More focus in this case study is given to the file \emph{compile}, as this file is called once per variant to be compiled with the list of compilation settings and one possible combination given as arguments. A complete version of this file written in Bash is given in appendix\ref{app:compile} and its most important parts are illustrated in Fig.\ref{fig:compile}. The arguments are given in the same order as the list described in section~\ref{sec:plan}. In this case study, \$1 defines the entropy and in \$2 is given the number of threads that have to be compiled in this version. It is a good practice to assign these values to variables whose name is comprehensive. This clarifies what information is used in every line of the script, and facilitates the propagation of changes from \emph{variables} to \emph{compile}. Figure~\ref{fig:compile} shows that make is called with arguments defining {ENTROPY} to the value of the entropy setting for this compilation as well as the number of threads to use. At the binary output's file name is appended the value of entropy and number of threads. Having a separate name for each compiled program variants prevents variant from being overwritten by each other, and makes it possible to start the right version when a particular measurement is to be started.
+More focus in this case study is given to the file \emph{compile}, as this file is called once per variant to be compiled with the list of compilation settings and one possible combination given as arguments. A complete version of this file written in Bash is given in appendix\ref{app:compile} and its most important parts are illustrated in Fig.\ref{fig:compile}. The arguments are given in the same order as the list described in section~\ref{sec:plan}. In this case study, \$1 defines the entropy and in \$2 is given the number of threads that have to be compiled in this version. It is a good practice to assign these values to variables whose name is comprehensive. This clarifies what information is used in every line of the script, and facilitates the propagation of changes from \emph{variables} to \emph{compile}. Figure~\ref{fig:compile} shows that make is called with arguments defining {ENTROPY} to the value of the entropy setting for this compilation as well as the number of threads to use. At the binary output's file name is appended the value of entropy and number of threads. Having a separate name for each compiled program variants prevents variant from being overwritten by each other, and makes it possible to start the right version when a particular measurement is to be started. Notice \emph{compile} must return a value so the global batch knows if it succeed or not. This is achieved with \emph{exit <value>} where \emph{<value>} is the value to return. 0 denote success and anything else report a failure. A convenient way to obtain a suitable value consists in reading \emph{\$?}, which returns same value as the last program or command called, usually having the same convention.
 
 \begin{figure}
 \centering
@@ -336,23 +366,23 @@ try=$4
 
 ./program-$entropy-$nb_threads $ct
 
-exit 0
+exit ?
 \end{lstlisting}
 \caption{\emph{run} catches the compilation settings first, then the run settings and run the right binary with relevant parameters.}
 \label{fig:run}
 \end{figure}
 
-In order to make the scripts catch their output from the measurements, \emph{run} must absolutely print on standard output the matrix generated by the program variant, regardless of the way it outputs the data collected. \emph{run} must output this matrix, and nothing else, to standard output. On this example, the program variant directly prints it on the terminal.
+In order to make the scripts catch their output from the measurements, \emph{run} must absolutely print on standard output the matrix generated by the program variant, regardless of the way it outputs the data collected. \emph{run} must output this matrix, and nothing else, to standard output. On this example, the program variant directly prints it on the terminal. It may also display data files the program would generate, after some possible filtering. As for \emph{compile} script (see section~\ref{sec:compil}), it is very important the \emph{run} script returns 0 if the experiment was successful or another value in case of failure. The use the keyword \emph{exist} and special variable \emph{\$?} is suitable to this purpose.
 
 % Very rough time estimation algorithm
 % Give a name to your experiment; if you run it again with more settings but the same code, the data will be merged together
-Once the file \emph{variables} is ready and the compilation process is finished, all program variants are run and by the command \emph{bash start run $<name>$}, where $<name>$ is a name to the experiment being conducted. The script catches the data outputted on standard output, and stores it into the file \emph{data-$<name>$-$<date>$.m}. The batch script tries to give a very rough estimation of the remaining time before the batch is finished. This evaluation is based on the time that was necessary to run the program versions already run.
+Once the file \emph{variables} is ready and the compilation process is finished, all program variants are run and by the command \emph{bash start run $<name>$}, where $<name>$ is a name to the experiment being conducted. The script catches the data outputted on standard output, and stores it into the file \emph{data-$<name>$-$<date>$.m}. The batch script tries to give a very rough estimation of the remaining time before the batch is finished. This evaluation is based on the time that was necessary to run the program versions already run and is calculated using integer seconds only. It is therefore very rough and shouldn't be used to estimate the perfomance of the program monitored. If a variant run did not work properly and \emph{run} reported this failure through exit value, then the batch will record its output and neutralize it through comments and warnings in the final data file. As a consequence, failures do not necessarily jeopardize the whole measurement process, since their output are identified, neutralized. The faulty variant can be fixed and run in a later batch using the same experiment name. Alternatively, since incorrect output is not entirely discarded but only commented, the user can still collect it manually and analyze it if necessary.
 
 If two experiments are successively run with the same name, their results are merged together into a single file named \emph{data.m}. Every experiment runs separately stores its result in a specific output file. The results of two experiments of the same name can be merged again to \emph{data.m} using the command \emph{bash start merge $<name>$}. Two different experiments, that differ in features that are not defined by any setting in \emph{variables} can be merged together by the command \emph{bash merge $<res1.m>$ $<res2.m>$}, to a file name \emph{MERGE-} followed by the two file names. In this file, data coming from one or another experiment can be identified thanks to an additional column inserted before the first column or original data. It takes as value the index of the arguments given to \emph{merge} that referred to its original result file, starting at 0. For instance, in the output of \emph{merge exp1.m exp2.m}, all data found in exp1.m will be prefixed by 0 and all data coming from exp2.m is prefixed by 1 in the output merged file. Note that this feature requires Octave installed, and that Matlab does not support such operation.
 
 \subsection{Step 6: Process and plot the data collected}
 \label{sec:format}
-The data generated when running all program variants is a numeric matrix that Matlab or Octave can directly load and manipulate. In order to ease the manipulation, several functions inspired from relational algebra are provided. A complete commented example for this case study is available in the file \emph{plot\_data.m}. This script run by Matlab or Octave collects the data and processes it to obtain specific results used to plot graphs. It relies mainly on a set of data manipulation routines shortly described below. This script is usually very dense regarding the meaning of its lines, which makes it difficult to write correctly or to find the source of its defects. It usually takes shape of three parts: the first part collects the data, filters it through \emph{select} and \emph{where} operations and transforms it by applying custom functions. In this example such functions take recorded start and stop times (global and per thread) through their values in seconds and nanoseconds and compute the time in millisecond between these two steps in the program run. The second part extracts and reshapes this data in order to obtain small matrices ready to be plot. Finally, the third part uses the plot functions to generate and format graphs, and stores them in graphic files.
+The data generated when running all program variants is a numeric matrix that Matlab or Octave can directly load and manipulate as well as columnns' name, both wrapped in a Cell. In order to ease the manipulation, several functions inspired from relational algebra are provided. A complete commented example for this case study is available in the file \emph{plot\_data.m}. This script run by Matlab or Octave collects the data and processes it to obtain specific results used to plot graphs. It relies mainly on a set of data manipulation routines shortly described below. This script is usually very dense regarding the meaning of its lines, which makes it difficult to write correctly or to find the source of its defects. It usually takes shape of three parts: the first part collects the data, filters it through \emph{select} and \emph{where} operations and transforms it by applying custom functions. In this example such functions take recorded start and stop times (global and per thread) through their values in seconds and nanoseconds and compute the time in millisecond between these two steps in the program run. The second part extracts and reshapes this data in order to obtain small matrices ready to be plot. Finally, the third part uses the plot functions to generate and format graphs, and stores them in graphic files.
 
 Below is a very short description of the functions available. More extensive documentation is available in the files where these functions are implemented:
 \begin{itemize}
@@ -380,13 +410,15 @@ Plots one or more curves into a graph and displays axis labels, curves legend an
 Same as quickplot, but also allows the plotting of error bars (quickerrorbar.m)
 \item quickbar\\
 Plots a histograms with one or more bars per element in the x axis (quickbar.m)
+\item quickgantt\\
+Draws a gantt diagram, one horizontal line per element (quickgantt.m)
 \end{itemize}
 
 The command \emph{octave plot\_data.m} runs the octave script named \emph{plot\_data.m} and generates the graphs. Matlab cannot run the script in the same way. Open Matlab and browse in the left frame until you reach the folder where the results and all the scripts are stored, then start the script ``plot\_data.m''. The example used as a case study in this document produces the graph shown in Fig.\ref{fig:timing-200}. Its shows the time to perform 200 millions jumps using a sequential loop or splitting it between 1 to 8 threads. The plots clearly show that the global time decreases with the number of threads and it shows that the computation load is distributed equally among the threads. Finally, the low difference between the sequential and the parallel version using one thread shows that the overhead of parallelization is negligible compared to the overall performance.
 
 \section{Conclusion}
 \label{sec:conclusion}
-This documents describes a general methodology to manage easily the run of several variants of a single algorithm implementation, and the collection, processing and representation of collected data. This is a tedious task that the tools described here make both easier and faster. Although they considerably reduce the occasions to commit mistakes in experiments due to human interventions, they do not eliminate such mistake. One possible remaining pitfall lies in the data collection method (the choice of the clock) and the parts that could not be automated. A too big confidence in this automated process may hinder cautions to take when performing the remaining manual interventions, or even simply makes the user to forget these steps even if they may be important. More efforts need to be done to improve the set of scripts described here, such as providing them with the ability to interrupt and resume an experiment, manage crashes or invalid experiments without the necessity to run all of them a second time. Contributions are encouraged, both through coding more functionality or bug reports.
+This documents describes a general methodology to manage easily the run of several variants of a single algorithm implementation, and the collection, processing and representation of collected data. This is a tedious task that the tools described here make both easier and faster. Although they considerably reduce the occasions to commit mistakes in experiments due to human interventions, they do not eliminate such mistake. One possible remaining pitfall lies in the data collection method (the choice of the clock) and the parts that could not be automated. A too big confidence in this automated process may hinder cautions to take when performing the remaining manual interventions, or even simply makes the user to forget these steps even if they may be important. More efforts need to be done to improve the set of scripts described here, such as providing them with the ability to interrupt and resume an experiment. Contributions are encouraged, both through coding more functionality or bug reports.
 
 \clearpage
 \appendix
@@ -814,6 +846,7 @@ main(int argc, char ** argv)
 #endif
 #endif
 
+  // Always report a successful experiment
   return 0;
 }
 \end{lstlisting}
@@ -850,13 +883,15 @@ nb_threads=`seq 0 8`
 \begin{lstlisting}
 #!/bin/bash -f
 
-#Compile
-
+# Compile settings
 entropy=$1
 nb_threads=$2
 
 make ENTROPY=$entropy NB_THREADS=$nb_threads\
  SUFFIX=-$entropy-$nb_threads
+
+exit $?
+
 \end{lstlisting}
 
 \subsection{Makefile}

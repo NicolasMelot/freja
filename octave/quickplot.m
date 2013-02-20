@@ -27,10 +27,10 @@
 %	fignum:	Figure number. A figure of the same number as one or several
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
-%	data:	Matrix containing x and y values to be plotted (matrix).
-%	data_x:	Index in the input matrix (data) where the x axis values are 
+%	table:	Matrix containing x and y values to be plotted (matrix).
+%	colx:	Index in the input matrix (data) where the x axis values are 
 %		recorded (scalar).
-%	data_y:	Index in the input matrix (data) where the x axis values are 
+%	coly:	Index in the input matrix (data) where the x axis values are 
 %		recorded (scalar).
 %	error:	Base value from which the bar of the histogram start. This
 %		shifts up or down the y value to be plotted. When y values are
@@ -57,24 +57,38 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickplot(fignum, data, data_x, data_y, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickplot(fignum, table, colx, coly, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+
+data = table{1, 1};
+data_x = cellfindstr(data{2}, colx);
+if data_x < 1
+	error(['Could not find column ''' colx ''' in table.']);
+end
+data_y = cellfindstr(data{2}, coly);
+if data_y < 1
+	error(['Could not find column ''' coly ''' in table.']);
+end
 
 % Disable window popups when generating a new graph
-set (0, 'defaultfigurevisible', 'off') 
+set (0, 'defaultfigurevisible', 'off');
 
 figure(fignum);
 
-plotting(1) = plot(data{1,1}(:,data_x), data{1,1}(:, data_y));
+data = table{1, 1};
+data = data{1};
+plotting(1) = plot(data(:, data_x), data(:, data_y));
 set(plotting(1), 'marker', marks{1, 1});
 set(plotting(1), 'markersize', markss);
 set(plotting(1), 'linewidth', curvew);
 set(plotting(1), 'color', colors{1, 1});
 hold on;
 
-maxi = size(data);
+maxi = size(table);
 maxi = maxi(2);
 for i = 2:maxi
-	plotting(i) = plot(data{1, i}(:, data_x), data{1, i}(:, data_y));
+	data = table{1, i};
+	data = data{1};
+	plotting(i) = plot(data(:, data_x), data(:, data_y));
 
 	set(plotting(i), 'marker', marks{1, i});
 	set(plotting(i), 'markersize', markss);
@@ -102,6 +116,6 @@ set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 
 hold off;
-set (0, 'defaultfigurevisible', 'on') 
+set (0, 'defaultfigurevisible', 'on');
 	
 end

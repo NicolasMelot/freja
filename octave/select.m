@@ -24,34 +24,65 @@
 %	
 %	
 %	Parameters:
-%	matrix:	The matrix to be filtered (matrix)
-%	cols:	Indexes of columns to be kept (vector).
-%	out:	The input matrix without any column not listed in cols (matrix)
+%	table:	The matrix to be filtered (table)
+%	cols:	Column string to be kept. Behavior is undefined if a column is
+%		selected twice (list of strings).
+%	def:	Default value to insert if a column was not found in table (scalar)
+%	out:	The input matrix without any column not listed in cols (table)
 %
 %	Example:
-%	a = [1 1 3 4; 1 2 7 8; 1 1 5 6; 2 3 3 9; 2 3 5 5 ; 1 2 7 7]
-%	a = [
-%		1 1 3 4 ;
-%		1 2 7 8 ;
-%		1 1 5 6 ;
-%		2 3 3 9 ;
-%		2 3 5 5 ;
-%		1 2 7 7 ;
-%	]
-%	b = select(a, [2 4])
-%	b = [
-%		1 4 ;
-%		2 8 ;
-%		1 6 ;
-%		3 9 ;
-%		3 5 ;
-%		2 7 ;
-%	]
+%	a = {
+%	      [1,1] =
+%		1 1 3 4
+%		1 2 7 8
+%		1 1 5 6
+%		2 3 3 9
+%		2 3 5 5
+%		1 2 7 7
+%
+%	      [1,2] =
+%		col1
+%		col2
+%		col3
+%		col4
+%	}
+%	b = select(a, ['col2' 'col4'])
+%	b = {
+%	      [1,1] =
+%		1 4
+%		2 8
+%		1 6
+%		3 9
+%		3 5
+%		2 7
+%
+%	      [1,2] =
+%		col2
+%		col4
+%	}
 
-function out = select(matrix, cols)
-stuff=size(cols);
-stuff=stuff(2);
-for i = 1:stuff
-	out(:, i) = matrix(:, cols(1, i));
+function out = select(table, cols, def)
+	stuff=size(cols);
+	stuff=stuff(2);
+
+	for i = 1:stuff
+		index = cellfindstr(table{2}, cols{i});
+		if index > 0
+			data(:, i) = table{1}(:, index);
+		else
+			warning(['Could not find column ''' cols{i} ''' in table. Filling with value ' int2str(def) '.']);
+			colsize = size(table{1});
+			colsize = colsize(1);
+			data(:, i) = ones(colsize, 1) .* def;
+		end
+			col(i)= cols(i);
+	end
+out{1} = data;
+out{2} = col;
 end
-end
+
+
+
+
+
+

@@ -20,37 +20,89 @@
 %
 %	Function duplicate
 %
-%	Duplicate once or more one or several columns of a given matrix
+%	Duplicate or create once or more, one or several columns of a given table
 %	
 %	
 %	Parameters:
-%	matrix:	The matrix which some columns are duplicated (matrix)
-%	times:	Number of times each column of the matrix must be represented
-%		in the output (vector, as many elements as matrix has columns,
-%		every elements striclty greater than zero)
-%	out:	The matrix with duplicated columns (matrix)
+%	table:	The table to which columns are to be duplicated added (table)
+%	src:	Column names to duplicate. If you don't need any column to copy
+%		from, give a name denoting a column that does not exist. In that
+%		case, the given name is *not* used as name for the new column
+%		(cell of strings).
+%	names:	Name to give to new columns inserted. The actual position of new
+%		columns are undefined (cell of strings).
+%	def:	Value to fill a column not copied from an existing column (scalar).
+%	out:	The table with duplicated columns (table).
 %
 %	Example:
-%	a = [1 2 3 4; 5 6 7 8]
-%	a = [
-%		1 2 3 4 ;
-%		5 6 7 8 ;
-%	]
-%	b = duplicate(a, [1 1 2 3])
-%	b = [
-%		1 2 3 3 4 4 4 ;
-%		5 6 7 7 8 8 8 ;
-%	] 
+%	a = {
+%	      [1,1] =
+%		1 2 3 4
+%		5 6 7 8
+%
+%	      [1,2] =
+%		col1
+%		col2
+%		col3
+%		col4
+%	}
+%	b = duplicate(a, {'col3' 'col4' 'col4' 'col_none'}, {'col3b', 'col4b', 'col4c', 'new_col'}, 0)
+%	b = {
+%	      [1,1] =
+%		1 2 3 4 3 4 4 0
+%		5 6 7 8 7 8 8 0
+%
+%	      [1,2] =
+%		col1
+%		col2
+%		col3
+%		col3b
+%		col4
+%		col4b
+%		col4c
+%		new_col
+%	} 
 
-function out = duplicate(matrix, times)
-column_count = 1;
-maxi = size(matrix);
-maxi = maxi(2);
+function out = duplicate(table, src, names, def)
+	src_size = size(src);
+	src_size = src_size(2);
 
-for i = 1:maxi
-	for j = 1:times(1, i)
-		out(:, column_count) = matrix(:, i);
-		column_count = column_count + 1;
+	data = table{1};
+	tbl_size = size(data);
+	tbl_size = tbl_size(2);
+	col = table{2};
+
+	for i = 1:src_size
+		index = cellfindstr(table{2}, src{i});
+		tbl_size += 1;
+		if index > 0
+			data(:, tbl_size) = data(:, index);
+		else
+			data_size = size(data(:, 1));
+			data_size = data_size(1);
+			data(:, tbl_size) = ones(data_size, 1) .* def;
+		end
+		col{tbl_size} = names{i};
 	end
+
+	out{1} = data;
+	out{2} = col;
 end
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
