@@ -73,32 +73,20 @@ end
 y_marging = 10;
 figure(fignum);
 
-da = table{1};
-x = merge(separate(da(:, data_x), [1]), {@mean})
-da = extend(da, [data_x], [data_x], base)
-da = separate(da, [da_x])
-y = da{1,1}(:, data_y)
+x = data(groupby(select(table, {colx}), {colx}, {}, {@mean}), {colx}, 0);
+all_data = extend(table, {colx}, {colx}, base);
+current_x_data = where(all_data, {colx}, {[x(1)]});
+y = data(current_x_data, {coly}, 0);
 
-maxi = size(da);
-maxi = maxi(2);
+maxi = size(x);
+maxi = maxi(1);
 for i = 2:maxi
-	y = [y da{1, i}(:, data_y)]
-end
-
-x = data(groupby(select(table, {colx}), {colx}, {}, {@mean}), {colx}, 0)
-collect = extend(table, {colx}, {colx}, base);
-collect = groupby(collect, {colx}, {}, {@mean})
-y = data(collect, {coly}, 0)
-
-maxi = size(collect);
-maxi = maxi(2);
-for i = 2:maxi
-	y = [y data(table, {coly}, 0)]
+	current_x_data = where(all_data, {colx}, {[x(i)]});
+	y = [y data(current_x_data, {coly}, 0)];
 end
 
 hold on;
 handle = bar(x, y', thickn, style);
-%set(handle(1), 'basevalue', base);
 
 max_value = max(max(y));
 min_value = min([min(min(y)) base]);
@@ -128,96 +116,4 @@ print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num
 hold off;
 set (0, 'defaultfigurevisible', 'on')
 	
-end
-
-function out = separate(matrix, col)
-nb_col = size(col);
-nb_col = nb_col(2);
-
-% Warm-up
-old_size = 1;
-old_recipient = {matrix};
-
-for i = 1:nb_col
-	new_recipient = {};
-	new_size = 0;
-
-	for j = 1:old_size
-		% sort the matrix regarding the current column
-		mat = sortrows(old_recipient{j}, col(1, i));
-
-		% The matrix is copied from the old container to the new container
-		% beginning with first line
-		new_size = new_size + 1;
-		new_recipient{new_size}(1, :) = mat(1, :);
-		new_mat_size = 2;
-
-		% Browse the rest of the matrix and copy its rows in the new recipient
-		size_mat = size(mat);
-        size_mat = size_mat(1);
-		key = mat(1, col(1, i));
-		for k = 2:size_mat
-			% If a new key has been found
-			if mat(k, col(1, i)) ~= key
-				new_size = new_size + 1; % increment the size of new_recipient
-				new_mat_size = 1; % reset the new matrix' size
-				
-				% Update the key
-				key = mat(k, col(1, i));
-			end
-
-			% Copy another matrix row into the new matrix
-			new_recipient{new_size}(new_mat_size, :) = mat(k, :);
-			new_mat_size = new_mat_size + 1;
-		end
-	end
-
-	% Get ready for a new recursion step
-	old_recipient = new_recipient;
-	old_size = new_size;
-end
-
-out = old_recipient;
-
-end
-
-function out = merge(matrix, group, copy, value)
-sep = groupby(matrix, group);
-max_size=0;
-max_index=0;
-
-maxi = size(sep);
-maxi = maxi(2);
-
-for i = 1:maxi
-    size_sep = size(sep{i});
-	if size_sep(1) > max_size
-		max_size = size_sep(1);
-		max_index = i;
-	end
-end
-
-out=[];
-
-for i = 1:maxi
-    size_sep = size(sep{i});
-	height = max_size - size_sep(1);
-	width = size_sep(2);
-	append = [sep{i}; zeros(height, width)];
-
-    maxj = size(copy);
-    maxj = maxj(2);
-	for j = 1:maxj
-		append(:, copy(j)) = sep{max_index}(1:max_size, copy(j));		
-    end
-
-    maxj = size(group);
-    maxj = maxj(2);
-	for j = 1:maxj
-		append(:, group(j)) = sep{i}(1, group(j));
-	end
-
-	out = [out; append];
-end
-
 end
