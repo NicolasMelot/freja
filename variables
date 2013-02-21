@@ -24,7 +24,7 @@ output="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec threa
 # count
 
 compile=(entropy nb_threads)
-entropy="0.1"				# Randomness in the calculation time
+entropy="0.4"				# Randomness in the calculation time
 nb_threads=`seq 0 8`
 
 run=(ct try)

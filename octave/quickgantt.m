@@ -28,14 +28,11 @@
 %	fignum:	Figure number. A figure of the same number as one or several
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
-%	data:	Cell containing matricies in which one line or column represents
+%	data:	Cell containing matrices in which one line or column represents
 %		discontinuous lines to be shown. Each line is a vector whose
 %		paire of values represent the x point where a segment starts and
 %		stop. Each vector must be of length 2*n or the last value is ignored
 %		(cell of matrices or cell of vectors)
-%	index	:Indicates which row or which column in the matrices containes in data
-%		contain the line description (scalar)
-%	invert:	If 0, reads rows in data. if not 0, read columns (scalar)
 %	colors:	Colors of the lines to draw. Each color is represented by either
 %		a string ('red', 'blue') or an RGB vector (cell of string and/or
 %		vectors).
@@ -62,8 +59,7 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickgantt(fignum, data, index, invert, colors, thickn, ptrn, ptrnst, ptrnc, ptrns, ptrnd, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, outf, format)
-
+function quickgantt(fignum, data, colors, thickn, ptrn, ptrnst, ptrnc, ptrns, ptrnd, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, outf, format)
 ptrnd = ptrnd / 100;
 figure(fignum);
 hold on;
@@ -74,12 +70,7 @@ xmax = 0;
 num_diagram = size(data)(2);
 ylim([0 num_diagram + 1]);
 for i=1:num_diagram
-	if(invert == 0)
-		xx = data{i}(index,:);
-	else
-		xx = data{i}'(index,:);
-	end
-
+	xx = data{i}(1, :);
 	size_xx = size(xx)(2) / 2;
 
 	for j=1:size_xx 

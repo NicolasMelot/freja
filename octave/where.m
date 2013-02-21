@@ -59,6 +59,7 @@
 %		1 1 3 4
 %		1 2 7 8
 %		1 2 7 7
+
 %
 %	      [1,2] =
 %		col1
@@ -68,24 +69,24 @@
 %	}
 
 function out = where(table, cols, refs)
-data=table{1};
-maxi=size(cols);
-max=maxi(2);
+	matrix=table{1};
+	maxi=size(cols);
+	max=maxi(2);
 
-for i = 1:max
-	col = cellfindstr(table{2}, cols{i});
-	ref = refs{1, i};
-
-	cond = data(:, col) == ref(1, 1);
-    
-	maxj = size(ref);
-	maxj = maxj(2);
-	for j = 2:maxj
-		data(:, col) = 1 .* data(:, col);
-		cond = cond | data(:, col) == ref(1, j);
+	for i = 1:max
+		col = cellfindstr(table{2}, cols{i});
+		ref = refs{1, i};
+	
+		cond = matrix(:, col) == ref(1, 1);
+	    
+		maxj = size(ref);
+		maxj = maxj(2);
+		for j = 2:maxj
+			cond = cond | matrix(:, col) == ref(1, j);
+		end
+	
+		matrix = matrix(find(cond), :);
 	end
-
-	out{1} = data(find(cond), :);
+	out{1} = matrix;
 	out{2} = table{2};
-end
 end

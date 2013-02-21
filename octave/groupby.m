@@ -107,7 +107,7 @@ for i = 1:nb_col
 
 		% Browse the rest of the matrix and copy its rows in the new recipient
 		size_mat = size(mat);
-        size_mat = size_mat(1);
+		size_mat = size_mat(1);
 		key = mat(1, col(1, i));
 		for k = 2:size_mat
 			% If a new key has been found
@@ -149,6 +149,9 @@ for i = 1:size_grp
 	end
 	for j = 1:apply_size
 		index = cellfindstr(table{2}, apply{j});
+		if index < 1
+			error(['Could not find column ''' apply{i} ''' in table.']);
+		end
 		line(1, j + coln_size) = func{j}(old_recipient{i}(:, index));
 	end
 	data(i, :) = line;
