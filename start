@@ -102,7 +102,7 @@ merge_data()
 	info Merging all results of the same experiment together
 
 	echo -e $DATA_BEGIN > $data$ext
-	ls data-$experiment-*.m|while read file; do echo %\ $file; cat $file|grep -v function|grep -v ^x|grep -v end|grep -v ']'|grep -v '}'|grep -v ^$|grep -v \'; done >> $data$ext
+	ls $data-$experiment-*$ext|while read file; do echo %\ $file; cat $file|grep -v function|grep -v ^x|grep -v end|grep -v ']'|grep -v '}'|grep -v ^$|grep -v \'; done >> $data$ext
 	echo -e $DATA_END >> $data$ext
 
 	echo -e $COLUMNS_BEGIN >> $data$ext
