@@ -75,14 +75,14 @@ collected = duplicate(collected, {'global_time' 'thread_time'}, {'global_stddev'
 % Second part: extraction and reshaping to produce smaller matrices
 % Global timings
 global_timing = groupby(collected, {'entropy' 'nb_threads' 'ct'}, {'global_time' 'thread_time' 'global_stddev' 'thread_stddev'}, {@mean, @mean, @std, @std}); % Separate into groups defined by entropy, number of threads and number of loops
-global_timing_100 = where(global_timing, {'entropy' 'ct'}, {[0.5] [100000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 100 million jumps.
-global_timing_200 = where(global_timing, {'entropy' 'ct'}, {[0.5] [200000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 200 million jumps.
+global_timing_100 = where(global_timing, {'entropy' 'ct'}, {[0.4] [100000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 100 million jumps.
+global_timing_200 = where(global_timing, {'entropy' 'ct'}, {[0.4] [200000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 200 million jumps.
 
 % Timings per thread
 thread_timing = groupby(collected, {'entropy' 'nb_threads' 'ct' 'thread'}, {'global_time' 'thread_time' 'global_stddev' 'thread_stddev'}, {@mean, @mean, @std, @std}); % Separate into groups defined by entropy, number of threads, number of loops and thread number.
 thread_timing = extend(thread_timing, {'entropy' 'nb_threads' 'ct'}, {'thread'}, 0); % Extend groups that do not involve the maximum amount of threads and copy the thread number to each rows of extended groups. Fills the rest with 0 (non-existent threads work for a null period of time.
-thread_timing_100 = where(thread_timing, {'entropy' 'ct'}, {[0.5] [100000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 100 million jumps.
-thread_timing_200 = where(thread_timing, {'entropy' 'ct'}, {[0.5] [200000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 200 million jumps.
+thread_timing_100 = where(thread_timing, {'entropy' 'ct'}, {[0.4] [100000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 100 million jumps.
+thread_timing_200 = where(thread_timing, {'entropy' 'ct'}, {[0.4] [200000000]}); % Select rows denoting experiments with an entropy of 0.1 and performing 200 million jumps.
 
 % Gather start and stop time for global and each thread, target to a gantt diagram
 max_threads = max(data(select(table, {'nb_threads'}, 0), {'nb_threads'}, 0)); % Get maximum number of thread in this data

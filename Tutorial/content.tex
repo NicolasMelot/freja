@@ -382,7 +382,7 @@ If two experiments are successively run with the same name, their results are me
 
 \subsection{Step 6: Process and plot the data collected}
 \label{sec:format}
-The data generated when running all program variants is a numeric matrix that Matlab or Octave can directly load and manipulate as well as columnns' name, both wrapped in a Cell. In order to ease the manipulation, several functions inspired from relational algebra are provided. A complete commented example for this case study is available in the file \emph{plot\_data.m}. This script run by Matlab or Octave collects the data and processes it to obtain specific results used to plot graphs. It relies mainly on a set of data manipulation routines shortly described below. This script is usually very dense regarding the meaning of its lines, which makes it difficult to write correctly or to find the source of its defects. It usually takes shape of three parts: the first part collects the data, filters it through \emph{select} and \emph{where} operations and transforms it by applying custom functions. In this example such functions take recorded start and stop times (global and per thread) through their values in seconds and nanoseconds and compute the time in millisecond between these two steps in the program run. The second part extracts and reshapes this data in order to obtain small matrices ready to be plot. Finally, the third part uses the plot functions to generate and format graphs, and stores them in graphic files.
+The data generated when running all program variants associates in a cell a numeric matrix and descriptive names for each columns of the matrix. Matlab or Octave can load directly this generated data and manipulate it. In order to ease the manipulation, several functions inspired from relational algebra are provided and data fields are addressable through their names. A complete commented example for this case study is available in the file \emph{plot\_data.m}. This script run by Matlab or Octave collects the data and processes it to obtain specific results used to plot graphs. It relies mainly on a set of data manipulation routines shortly described below. This script is usually very dense regarding the meaning of its lines, which makes it difficult to write correctly or to find the source of its defects. It usually takes shape of three parts: the first part collects the data, filters it through \emph{select} and \emph{where} operations and transforms it by applying custom functions. In this example such functions take recorded start and stop times (global and per thread) through their values in seconds and nanoseconds and compute the time in millisecond between these two steps in the program run. The second part extracts and reshapes this data in order to obtain small matrices ready to be plot. Finally, the third part uses the plot functions to generate and format graphs, and stores them in graphic files.
 
 Below is a very short description of the functions available. More extensive documentation is available in the files where these functions are implemented:
 \begin{itemize}
@@ -400,6 +400,18 @@ Separates and groups rows by the content of the columns whose index is given as 
 Reduces groups produced by groupby to one row per group, using reduction functions such as mean, standard deviation or custom functions. Merges rows to a matrix (reduce.m)
 \item extend\\
 Makes sure every groups has the same number of rows and inserts new rows with suitable data if necessary (extend.m)
+\item cellfindstr\\
+Finds and return the index of a string in a cell of strings. Returns 0 if the string could not be found
+\item coln\\
+Returns all column names of a table
+\item data\\
+Returns data matrix contained in the table
+\item insert\\
+Inserts and add a matrix into a table
+\item setc\\
+Replaces all column names in a table with names given as argument
+\item setd\\
+Replaces data matrix in table with data given as argument
 \end{itemize}
 
 Matrices can be plotted using the following plotting routines:
