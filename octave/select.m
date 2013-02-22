@@ -73,8 +73,11 @@ function out = select(table, cols, def)
 	for i = 1:cols_size
 		% Include the whole original table
 		if strcmp(cols{i}, '')
-			data = [data table{1}]
-			for j = 1:cols_size
+			tsize = size(table{2});
+			tsize = tsize(2);
+			data = [data table{1}];
+			
+			for j = 1:tsize
 				col = table{2}{j};
 				already = cellfindstr(selected, col);
 
@@ -83,7 +86,7 @@ function out = select(table, cols, def)
 					warning(['Column ''' col ''' already inserted; renaming to ''' new_name '''.']);
 					selected = {selected{:} new_name};
 				else
-					selected = {selected{:} col}
+					selected = {selected{:} col};
 				end
 			end
 		else % Include only one column
