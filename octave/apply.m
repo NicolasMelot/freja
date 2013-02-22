@@ -26,39 +26,40 @@
 %	
 %	Parameters:
 %	table:	The table containing data to apply the function to (table).
-%	col:	Cell of column names where function outputs are written (string).
+%	coln:	Cell of column names where function outputs are written.
+%		Note processing order is undefined (string).
 %	func:	Functions to apply to the tables' rows (pointer to function).
 %		Usually a user-defined function denoted by @<function_name>.
 %		The function must take the followin signature:
-%		function y = <function_name>(column, row)
-%		where:
-%			column in the index of the column where output is written (scalar)
-%			row is a vector where is copied the row to which the function
-%				is currently applied (vector)
-%			y is the output value (scalar)
-%	out:	The table after computation
+%		function y = <function_name>(table, coln), where:
+%		* Table is the same table as apply function table argument
+%		  (table).
+%		* coln is the column name where result is written (string).
+%		* output is the result vector, exactly as long as table has
+%		  lines (vector).
+%	aux	Auxiliary data the user may need to pass to functions
+%		(undefined type).
+%	out:	The table after computation.
 
-function out = apply(table, col, func)
-size_matrix = size(table{1});
-size_y = size_matrix(1);
+function out = apply(table, col, func, aux)
+	size_matrix = size(table{1});
+	size_y = size_matrix(1);
 
-col_size = size(col);
-col_size = col_size(2);
+	col_size = size(col);
+	col_size = col_size(2);
 
-out{1} = table{1};
-out{2} = table{2};
+	matrix = table{1};
 
-for i = 1:size_y
 	for j = 1:col_size
 		index = cellfindstr(table{2}, col{j});
 		if index > 0
-			line{1} = table{1}(i, :);
-			line{2} = table{2};
-			out{1}(i, index) = func{j}(line, col{j});
+			matrix(:, index) = func{j}(table, col{j}, aux);
 		else
 			error(['Couldn''t find column ''' col{j} '''.']);
 		end
 	end
-end
+
+	out{1} = matrix;
+	out{2} = table{2};
 end
 

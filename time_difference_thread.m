@@ -23,20 +23,19 @@
 %	Compute the time difference in milliseconds before a start time t1
 %	and a stop time t2, each of them represented as seconds and nanoseconds
 %	according to the the clock_gettime() function used in c. Fetches the
-%	required data from row at indexes where it is known there is relevant
-%	data stored. This function is specific to the feature to be computed
-%	in this experiment.
+%	required data at columns where relevant is data stored. This function
+%	is specific to the feature to be computed in this experiment.
 %	
 %	
 %	Parameters:
-%	row:	Row being process by this call to the function (one line table)
-%	col:	Column where the result will be written (string)
+%	table:	Table being processed this function (table)
+%	coln:	Column where the result will be written (string)
+%	aux:	Any other data the user needs. Nothing here (undefined type).
 %	out:	The new value to be written to the row (scalar).
 
-function y = time_difference_thread(row, col)
+function y = time_difference_thread(row, col, aux)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-% entropy nb_threads ct try thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec
-	y = (((data(row, {'thread_stop_sec'}, 0) - data(row, {'thread_start_sec'}, 0)) * NSEC_IN_SEC + data(row, {'thread_stop_nsec'}, 0) - data(row, {'thread_start_nsec'}, 0))) / NSEC_IN_MSEC;
+	y = (((data(row, {'thread_stop_sec'}, 0) - data(row, {'thread_start_sec'}, 0)) .* NSEC_IN_SEC + data(row, {'thread_stop_nsec'}, 0) - data(row, {'thread_start_nsec'}, 0))) ./ NSEC_IN_MSEC;
 end

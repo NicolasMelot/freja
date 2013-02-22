@@ -121,7 +121,7 @@ set(gca, 'Ytick', [0:num_diagram + 1], 'YTickLabel', {'', graphl{1:num_diagram},
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 
 hold off;
-set (0, 'defaultfigurevisible', 'off')
+set (0, 'defaultfigurevisible', 'off');
 
 end
 

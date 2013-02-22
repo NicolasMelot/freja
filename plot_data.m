@@ -31,21 +31,21 @@ function y = global_start(row, col)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-	y = (data(row, {'start_time_sec'}, 0) * NSEC_IN_SEC + data(row, {'start_time_nsec'}, 0)) / NSEC_IN_MSEC;
+	y = (data(row, {'start_time_sec'}, 0) .* NSEC_IN_SEC + data(row, {'start_time_nsec'}, 0)) ./ NSEC_IN_MSEC;
 end
 
 function y = thread_start(row, col)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-	y = (data(row, {'thread_start_sec'}, 0) * NSEC_IN_SEC + data(row, {'thread_start_nsec'}, 0)) / NSEC_IN_MSEC - global_start(row, 'unused');
+	y = (data(row, {'thread_start_sec'}, 0) .* NSEC_IN_SEC + data(row, {'thread_start_nsec'}, 0)) ./ NSEC_IN_MSEC - global_start(row, 'unused');
 end
 
 function y = thread_stop(row, col)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-	y = (data(row, {'thread_stop_sec'}, 0) * NSEC_IN_SEC + data(row, {'thread_stop_nsec'}, 0)) / NSEC_IN_MSEC - global_start(row, 'unused');
+	y = (data(row, {'thread_stop_sec'}, 0) .* NSEC_IN_SEC + data(row, {'thread_stop_nsec'}, 0)) ./ NSEC_IN_MSEC - global_start(row, 'unused');
 end
 
 function y = cp_start_sec(row, col)
@@ -69,7 +69,7 @@ collected = select(table, {'entropy' 'nb_threads' 'ct' 'thread' 'start_time_sec'
 collected = where(collected, {'nb_threads'}, {[0 1 2 3 4 5 6 7 8]}); % Keeps only measurements involving sequential or 1, 2, 4 and 8 threads.
 %collected = duplicate(collected, [1 1 1 1 1 1 1 2 1 1 1 2]); % Duplicate two columns. The new columns will be used to store the computed time difference between start and stop for both global and per-thread process.
 collected = duplicate(collected, {'stop_time_nsec' 'thread_stop_nsec'}, {'global_time' 'thread_time'}, 1); % Duplicate two columns. The new columns will be used to store the computed time difference between start and stop for both global and per-thread process.
-collected = apply(collected, {'global_time' 'thread_time'}, {@time_difference_global, @time_difference_thread}); % Compute the global start-stop difference
+collected = apply(collected, {'global_time' 'thread_time'}, {@time_difference_global, @time_difference_thread}, 0); % Compute the global start-stop difference
 collected = select(collected, {'entropy' 'nb_threads' 'ct' 'thread' 'global_time' 'thread_time'}, 0); % keep every features (entropy, number of threads, number of jumps and thread number) plus the time differences calculated earlier.
 collected = duplicate(collected, {'global_time' 'thread_time'}, {'global_stddev' 'thread_stddev'}, 2); % Create 2 more columns to calculate timing standard deviations
 % Second part: extraction and reshaping to produce smaller matrices
@@ -92,7 +92,7 @@ table = select(table, {'entropy', 'try', 'thread', 'start_time_sec', 'start_time
 
 % Create new lines for global time, in order to fit data shape to quickgantt function
 globals = groupby(table, {'try'}, {'entropy', 'try', 'thread', 'start_time_sec', 'start_time_nsec', 'stop_time_sec', 'stop_time_nsec', 'thread_start_sec', 'thread_start_nsec', 'thread_stop_sec', 'thread_stop_nsec'}, {@mean, @mean, @mean, @mean, @mean, @mean, @mean, @mean, @mean, @mean, @mean}); % Isolate data gather per try number and apply a mean to every other columns. We only care about try columns and global time values here. The rest is "@mean'ed" but we won't keep it. 
-globals = apply(globals, {'thread' 'thread_start_sec' 'thread_start_nsec' 'thread_stop_sec' 'thread_stop_nsec'}, {@set_thread_zero, @cp_start_sec, @cp_start_nsec, @cp_stop_sec, @cp_stop_nsec}); % Reset thread number to 0 (to denote global time) and copy columns for global timing to thread columns
+globals = apply(globals, {'thread' 'thread_start_sec' 'thread_start_nsec' 'thread_stop_sec' 'thread_stop_nsec'}, {@set_thread_zero, @cp_start_sec, @cp_start_nsec, @cp_stop_sec, @cp_stop_nsec}, 0); % Reset thread number to 0 (to denote global time) and copy columns for global timing to thread columns
 table = insert(table, data(globals, {'entropy', 'try', 'thread', 'start_time_sec', 'start_time_nsec', 'stop_time_sec', 'stop_time_nsec', 'thread_start_sec', 'thread_start_nsec', 'thread_stop_sec', 'thread_stop_nsec'}, 0)); % Insert this new data to the table. Lines of thread = 0 now denote global time.
 % Sort data so the newly inserted lines for thread 0 take position next to the relevant line for thread 1, instead of undefined position after insert operation
 matrix = data(table, {'entropy', 'try', 'thread', 'start_time_sec', 'start_time_nsec', 'stop_time_sec', 'stop_time_nsec', 'thread_start_sec', 'thread_start_nsec', 'thread_stop_sec', 'thread_stop_nsec'}, 0); % Get data matrix out
@@ -102,7 +102,7 @@ table = setd(table, matrix); % Put matrix back into table
 
 % Compute thread (and global) start and stop time
 table = duplicate(table, {'none' 'none'}, {'thread_start' 'thread_stop'}, -1); % Create new columns for start and stop values
-table = apply(table, {'thread_start' 'thread_stop'}, {@thread_start, @thread_stop}); % Apply conversion functions
+table = apply(table, {'thread_start' 'thread_stop'}, {@thread_start, @thread_stop}, 0); % Apply conversion functions
 table = groupby(table, {'thread'}, {'thread_start' 'thread_stop'}, {@mean, @mean}); % Group by thread number and reduce groups using mean function
 % Split every line into an inpendant line and put them in a cell so we can fit format for quickgantt (the reason is lines must be same length in matrices, but gantt needs different lines of different length).
 matrix = data(table, {'thread_start' 'thread_stop'}, 0); % Extracts thread_start and thread_stop columns from matrix
@@ -112,7 +112,6 @@ cell = {}; % Initialize a cell
 for i = 1:msize
 	cell{i} = matrix(i, :); % Add a matrix's line to the cell
 end
- 
 
 % Third part: use plotting function to generate graphs, format and store them in graphic files.
 % /!\ Matlab does not support line breaks in the middle of function calls. If you use Matlab, remove the comments and write the function call to quickplot, quickerrorbar and and quickbar in one line only.
