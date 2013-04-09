@@ -79,7 +79,7 @@ function bars = transtable(table, colx, coly, y_name)
 	for i = 1:log2(size_matrix(1)) + 1
 		filter = [filter 2 ^ i + 1];
 	end
-	table = where(table, {colx}, {filter})
+	table = where(table, {colx}, {filter});
 
 	x = data(table, {colx}, 0);
 	x_size = size(x);
