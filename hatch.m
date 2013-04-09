@@ -1,4 +1,26 @@
-function  hatch(obj,angle,color,style,step,width)
+function hatch(obj, pattern, color, style, step, width)
+	switch pattern
+		case 'nwse'
+			actual_hatch(obj, -45, color, style, step, width);
+		case 'swne'
+			actual_hatch(obj, 45, color, style, step, width);
+		case 'hrzt'
+			actual_hatch(obj, 0.001, color, style, step, width);
+		case 'vert'
+			actual_hatch(obj, 90.001, color, style, step, width);
+		case 'cross'
+			hatch(obj, 'nwse', color, style, step, width);
+			hatch(obj, 'swne', color, style, step, width);
+		case 'sqrt'
+			hatch(obj, 'hrzt', color, style, step, width);
+			hatch(obj, 'vert', color, style, step, width);
+		otherwise
+			warning(['Invalid pattern ''' pattern ''' (valid values ''nwse'', ''swne'', ''hrzt'', ''vert'', ''cross'' or ''sqrt''). Assuming ''nwse''.'])
+			actual_hatch(obj, -45, color, style, step, width);
+	end
+end
+
+function actual_hatch(obj,angle,color,style,step,width)
 % HATCH  Hatches a two-dimensional domain.
 %     Somewhat similar to the FILL command but fills the closed
 %     contour with hatched lines instead of uniform color.
@@ -74,11 +96,11 @@ argcount=nargin;
 % Check for macros ................
 ismacro = 0;
 if argcount==2
-	if isstr(angle)
+	if ischar(angle)
 		macro = angle; ismacro = 1; angle = angledflt;
 	end
 elseif argcount == 1
-	if isstr(obj), 
+	if ischat(obj), 
 		if strcmp(obj,'demo'),
 			demo;
 			return
@@ -131,7 +153,7 @@ if length(angle)>1
 	angle = angle(1);
 end
 % Check for color and style in one string
-if isstr(color)
+if ischar(color)
 	A = color(ones(8,1),:)==setstr(ones(length(color),1)*'wyrgbcmk')';
 	n0 = find(any(A));
 	str = color(any(A)==0);
@@ -172,7 +194,13 @@ ll = length(x);
 % Transform the coordinates .............................
 oldu = get(gca,'units');
 set(gca,'units','points')
-sza = get(gca,'pos'); sza = sza(3:4);
+
+%matlab
+%sza = get(gca,'pos');
+%octave
+sza = get(gca,'position');
+
+sza = sza(3:4);
 xlim = get(gca,'xlim');
 ylim = get(gca,'ylim');
 islx = strcmp(get(gca,'xscale'),'log');
@@ -254,7 +282,7 @@ axis(ax);
 %------------------------
 function demo
 figure
-subplot 211
+%subplot 211
 h=bar(ones(2,7))
 axis([0.6 1.4 0 1.3])
 set(gca,'color',[1 1 1]*0.9,'XTickLabel','','YTickLabel','')
@@ -271,7 +299,7 @@ y=1.1*ones(size(x));
 string=char({'hor', 'ver', 'thick','thicky','Thick','dense','Dense'});
 text(x,y,string);
 
-subplot 212
+%subplot 212
 h=bar(ones(2,7))
 axis([0.6 1.4 0 1.3])
 set(gca,'color',[1 1 1]*0.9,'XTickLabel','','YTickLabel','')

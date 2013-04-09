@@ -16,7 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-FILES=compile compile-filled Makefile merge octave/* program.c settings time_difference_global.m Tutorial/report.pdf COPYING.txt matlab/* merge.m plot_data.m run run-filled start time_difference_thread.m variables variables-filled program_seq.c program_par.c program_both.c
+FILES=compile compile-filled Makefile merge octave/* program.c settings time_difference_global.m Tutorial/tutorial.pdf COPYING.txt matlab/* merge.m plot_data.m run run-filled start time_difference_thread.m variables variables-filled program_seq.c program_par.c program_both.c
 ARCHIVE=Measuring.zip
 
 NB_THREADS=1

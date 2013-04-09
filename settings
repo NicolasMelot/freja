@@ -20,14 +20,22 @@
 
 logfile=log
 
-data=table
+table_name=table
+
+temp=/tmp
+columns_list_name=table_columns
+columns_file=$temp/pid.$$.columns
+failed_file=$temp/pid.$$.failed
+passed_file=$temp/pid.$$.passed
+data=$table_name
 ext=.m
 
-DATA_BEGIN="function x = table()\\nx = {["
-DATA_END="] table_columns()};\\nend\\n"
+DATA_BEGIN="function x = $table_name()\\nx = {["
+DATA_END="] $columns_list_name()};\\nend\\n"
 
-COLUMNS_BEGIN="function x = table_columns()\\nx = {"
+COLUMNS_BEGIN="function x = $columns_list_name()\\nx = {"
 COLUMNS_END="\\n};\\nend\\n"
 
 failed_begin="==== Failed run ===="
 failed_end="--------------------"
+
