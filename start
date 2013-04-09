@@ -107,7 +107,7 @@ merge_data()
 
 	echo -e $COLUMNS_BEGIN >> $data$ext
 	output=$(cat $data-$experiment-*$ext|tr \\\t ' '|tr -s ' '|grep -v ^$|grep "$(echo -e $COLUMNS_BEGIN|head -n 1|tr \\\n ' '|tr -s ' '|xargs echo)" -A 2|tail -n 1|tr -d \')
-	echo ${compile[@]}\ ${run[@]}\ $output|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $data$ext
+	echo $output|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $data$ext
 	echo -e $COLUMNS_END >> $data$ext
 }
 
