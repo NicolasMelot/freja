@@ -18,7 +18,7 @@
 %
 % =========================================================================
 %
-%	Function transpose
+%	Function transtable
 %
 %	Prepares a table from its x column and collection of y indexes for
 %	multiple bars to be shown in a bar histogram plot by quickplot.
@@ -70,7 +70,7 @@
 %	}
 
 
-function bars = makebars(table, colx, coly, y_name)
+function bars = transtable(table, colx, coly, y_name)
 	table = select(table, coly, 0);
 	matrix = data(table, coly, 0);
 	size_matrix = size(matrix);
