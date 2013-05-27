@@ -60,7 +60,7 @@
 %		(string).
 
 function quickgantt(fignum, data, colors, thickn, ptrn, ptrnst, ptrnc, ptrns, ptrnd, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, outf, format)
-ptrnd = ptrnd / 100;
+ptrnd = ptrnd * 5;
 figure(fignum);
 hold on;
 

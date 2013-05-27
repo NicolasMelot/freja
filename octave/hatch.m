@@ -160,7 +160,9 @@ if ischar(color)
 	if ~isempty(n0), color = color(n0); end
 	if ~isempty(str)
 		iss = strcmp(str,'-')|strcmp(str,'--')|strcmp(str,'-.');
-		if iss|strcmp(str,':'), style = str; end
+		if iss || strcmp(str,':')
+		style = str;
+		end
 	end
 end
 
@@ -280,6 +282,8 @@ set(lh,'linestyle',style)
 set(gca,'units',oldu)   % Set axes units back
 axis(ax);
 %------------------------
+end
+
 function demo
 figure
 %subplot 211
@@ -312,3 +316,4 @@ hatch(h(6),'cross')
 hatch(h(7),'plus')
 string=char({'fill','filly','rare','Rare','rarethick','cross','plus'});
 text(x,y,string);
+end

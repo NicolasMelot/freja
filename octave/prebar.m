@@ -114,6 +114,7 @@ function out = clone_line(vector)
 	len = size(vector);
 	len = len(1);
 	out = 1:len;
+end
 
 function out = spread_max_size(table, coln, aux)
 	vect = data(table, {coln}, 0);

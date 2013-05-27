@@ -16,6 +16,6 @@
 %    You should have received a copy of the GNU General Public License
 %    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function merge(i, out)
+function merge_tables(i, out)
 	dlmwrite(out, [i .* ones(size(data)(1), 1) data], ' ');
 end
