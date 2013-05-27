@@ -18,4 +18,4 @@
 
 function merge(i, out)
 	dlmwrite(out, [i .* ones(size(data)(1), 1) data], ' ');
-endfunction
+end
