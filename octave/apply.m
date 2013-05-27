@@ -31,14 +31,16 @@
 %	func:	Functions to apply to the tables' rows (pointer to function).
 %		Usually a user-defined function denoted by @<function_name>.
 %		The function must take the followin signature:
-%		function y = <function_name>(table, coln), where:
+%		function y = <function_name>(table, coln, aux), where:
 %		* Table is the same table as apply function table argument
 %		  (table).
 %		* coln is the column name where result is written (string).
+%		* aux is an aribraty value of an arbitrary type copied as is
+%		  when apply calls the function (user-defined type)
 %		* output is the result vector, exactly as long as table has
 %		  lines (vector).
 %	aux	Auxiliary data the user may need to pass to functions
-%		(undefined type).
+%		(user-defined type).
 %	out:	The table after computation.
 
 function out = apply(table, col, func, aux)

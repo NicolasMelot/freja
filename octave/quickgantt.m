@@ -67,6 +67,9 @@ hold on;
 xmin = 0;
 xmax = 0;
 
+% Disable window popups when generating a new graph
+set (0, 'defaultfigurevisible', 'off');
+
 num_diagram = size(data)(2);
 ylim([0 num_diagram + 1]);
 for i=1:num_diagram
@@ -121,7 +124,7 @@ set(gca, 'Ytick', [0:num_diagram + 1], 'YTickLabel', {'', graphl{1:num_diagram},
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 
 hold off;
-set (0, 'defaultfigurevisible', 'off');
+set (0, 'defaultfigurevisible', 'on');
 
 end
 

@@ -48,7 +48,7 @@
 %		col3
 %		col4
 %	}
-%	b = transpose(a, 'col1', {'col2' 'col4'}, 'y')
+%	b = transtable(a, 'col1', {'col2' 'col4'}, 'y')
 %	b = {
 %	      [1,1] =
 %		1 1
@@ -79,7 +79,7 @@ function bars = transtable(table, colx, coly, y_name)
 	for i = 1:log2(size_matrix(1)) + 1
 		filter = [filter 2 ^ i + 1];
 	end
-	table = where(table, {colx}, {filter});
+	table = where(table, {colx}, {filter})
 
 	x = data(table, {colx}, 0);
 	x_size = size(x);

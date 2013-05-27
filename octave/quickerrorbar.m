@@ -28,15 +28,15 @@
 %	fignum:	Figure number. A figure of the same number as one or several
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
-%	data:	Matrix containing x and y values to be plotted (matrix).
-%	colx:	Column in the input figure (data) where the x axis values are 
-%		recorded (scalar).
-%	coly:	Column in the input figure (data) where the x axis values are 
-%		recorded (scalar).
-%	err:	Base value from which the bar of the histogram start. This
-%		shifts up or down the y value to be plotted. When y values are
-%		high or zeros, a base of -1 makes possible to see bars
-%		representing a zero (scalar).
+%	data:	Table containing data to plot (table).
+%	colx:	Column in input table from which x values are extracted 
+%		(string).
+%	coly:	Columns from input table from which y values are plot (cell of
+%		strings). 
+%	err:	Columns from input table from which error bars are draw (cell of
+%		strings).
+%	filter: Where expression ({"[] {[] []}" "[] $[]}"}) to be applied on table
+%		for the corresponding column in coly parameter (cell of strings).
 %	colors:	Colors of the curves to plot. Each color is represented by either
 %		a string ('red', 'blue') or an RGB vector (cell of string and/or
 %		vectors).
@@ -58,20 +58,11 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickerrorbar(fignum, table, colx, coly, err, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickerrorbar(fignum, table, colx, coly, err, filter, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
 
-data = table{1, 1};
-data_x = cellfindstr(data{2}, colx);
+data_x = cellfindstr(coln(table), colx);
 if data_x < 1
 	error(['Could not find column ''' colx ''' in table.']);
-end
-data_y = cellfindstr(data{2}, coly);
-if data_y < 1
-	error(['Could not find column ''' coly ''' in table.']);
-end
-error = cellfindstr(data{2}, err);
-if err < 1
-	error(['Could not find column ''' err ''' in table.']);
 end
 
 % Disable window popups when generating a new graph
@@ -80,27 +71,33 @@ set (0, 'defaultfigurevisible', 'off');
 y_marging = 10;
 figure(fignum);
 
-data = table{1, 1};
-data = data{1};
-plotting(1) = errorbar(data(:, data_x), data(:, data_y), data(:, error));
-set(plotting(1), 'marker', marks{1, 1});
-set(plotting(1), 'markersize', markss);
-set(plotting(1), 'linewidth', curvew);
-set(plotting(1), 'color', colors{1, 1});
 hold on;
 
-max_value = max(data(:, data_y) + data(:, error));
-min_value = min(data(:, data_y) - data(:, error));
-
-maxi = size(table);
+maxi = size(coly);
 maxi = maxi(2);
-for i = 2:maxi
-	data = table{1, i};
-	data = data{1};
-	plotting(i) = errorbar(data(:, data_x), data(:, data_y), data(:, error));
+for i = 1:maxi
+	data_y = cellfindstr(coln(table), coly{i});
+	if data_y < 1
+		error(['Could not find column ''' coly{i} ''' in table.']);
+	end
+	data_err = cellfindstr(coln(table), err{i});
+	if data_err < 1
+		error(['Could not find column ''' err{i} ''' in table.']);
+	end
 
-	max_value = max(max_value, max(data{1, i}(:, data_y) + data{1, i}(:, error)));
-	min_value = min(min_value, min(data{1, i}(:, data_y) - data{1, i}(:, error)));
+	% Data filtering
+	filtering = strtrim(filter{i});
+	if strcmp(filtering, '') == 0
+		filtering=['where(table, ' filtering ')'];
+	else
+		filtering='table';
+	end
+	src = eval(filtering);
+
+	plotting(i) = errorbar(data(src, {colx}, 0), data(src, {coly{i}}, 0), data(src, {err{i}}, 0));
+
+	max_value = max(max(data(src, coly, 0) + data(src, err, 0)));
+	min_value = min(min(data(src, coly, 0) - data(src, err, 0)));
 
 	set(plotting(i), 'marker', marks{1, i});
 	set(plotting(i), 'markersize', markss);

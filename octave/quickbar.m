@@ -23,9 +23,7 @@
 %	Plots an histogram from the data given as input parameters, format
 %	and decorate it (legend, title, axis, etc) and output it to a graphic
 %	file eps or png. The histogram can feature several bars per step along
-%	the x axis. In this case, several rows in input data are labelled to the
-%	same x value and represent several entities shown for this x. The entities
-%	are assumed to be always sorted on the same order for every x values.
+%	the x axis, defined by all columns defined in coly parameter.
 %	
 %	
 %	Parameters:
@@ -33,14 +31,12 @@
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
 %	table:	Matrix containing x and y values to be plotted (matrix).
-%	colx:	Index in the input matrix (data) where the x axis values are 
-%		recorded (scalar).
-%	coly:	Index in the input matrix (data) where the x axis values are 
-%		recorded (scalar).
-%	base:	Base value from which the bar of the histogram start. This
-%		shifts up or down the y value to be plotted. When y values are
-%		high or zeros, a base of -1 makes possible to see bars
-%		representing a zero (scalar).
+%	colx:	Column name in input table where the x axis values are 
+%		recorded (string).
+%	coly:	All columns where y data is fetch from, one per bar at every x
+%		value (cell of strings).
+%	filter: Where expression ({'[] {[] []}' '[] $[]}'}) to be applied on table
+%		for the corresponding column in coly parameter (cell of strings).
 %	style:	Style of the bar groups at each x step. For instance 'grouped'
 %		or 'stacked'; see help bar (string).
 %	thickn:	Thickness of the bars on the graph (scalar)
@@ -58,38 +54,67 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickbar(fignum, table, colx, coly, base, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickbar(fignum, table, colx, coly, filter, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
 
-%collect = table{1, 1};
-data_x = cellfindstr(table{2}, colx);
+data_x = cellfindstr(coln(table), colx);
 if data_x < 1
 	error(['Cound not find column ''' colx ''' in table.']);
-end
-data_y = cellfindstr(table{2}, coly);
-if data_y < 1
-	error(['Cound not find column ''' coly ''' in table.']);
 end
 
 y_marging = 10;
 figure(fignum);
 
-x = data(groupby(select(table, {colx}), {colx}, {}, {@mean}), {colx}, 0);
-all_data = extend(table, {colx}, {colx}, base);
-current_x_data = where(all_data, {colx}, {[x(1)]});
+% Data filtering
+filtering = strtrim(filter);
+if strcmp(filtering, '') == 0
+	filtering=['where(table, ' filtering ');'];
+else
+	filtering='table;';
+end
+src = eval(filtering);
+
+src = data(src, coly, 0);
+src = src';
+
+coly_size = size(coly);
+coly_size = coly_size(2);
+
+colx_size = size(data(table, {colx}, 0));
+colx_size = colx_size(1);
+
+all_x = data(table, {colx}, 0);
+
+matrix = [];
+for i = 1:colx_size
+	x = all_x(i);
+	coly_x = src(:, i);
+	matrix_x = ones(coly_size, 1) .* x;
+	matrix_x = [matrix_x coly_x];
+	matrix = [matrix; matrix_x];
+end
+
+table = {matrix, {colx, 'coly'}};
+coly='coly';
+
+x = data(groupby(select(table, {colx}, 0), {colx}, {}, {}), {colx}, 0);
+current_x_data = where(table, {colx}, {[x(1)]});
 y = data(current_x_data, {coly}, 0);
 
 maxi = size(x);
 maxi = maxi(1);
 for i = 2:maxi
-	current_x_data = where(all_data, {colx}, {[x(i)]});
+	current_x_data = where(table, {colx}, {[x(i)]});
 	y = [y data(current_x_data, {coly}, 0)];
 end
+
+% Disable window popups when generating a new graph
+set (0, 'defaultfigurevisible', 'off');
 
 hold on;
 handle = bar(x, y', thickn, style);
 
 max_value = max(max(y));
-min_value = min([min(min(y)) base]);
+min_value = min(min(y));
 
 ylim([min_value - (max_value - min_value) / y_marging, max_value + (max_value - min_value) / y_marging]);
 

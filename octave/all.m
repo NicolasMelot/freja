@@ -18,37 +18,35 @@
 %
 % =========================================================================
 %
-%	Function coln
+%	Function all
 %
-%	Extract all columns names from a table
+%	Returns the input matrix with no transformation.
 %	
 %	
 %	Parameters:
-%	table:	The table containing data (table)
-%	out:	All names for columns in input table (cell of strings).
+%	matrix:	Input matrix to be returned back (matrix).
+%	out:	A copy of input matrix (matrix).
 %
 %	Example:
-%	a = {
-%	      [1,1] =
+%	a = [
 %		1 1 3 4
 %		1 2 7 8
 %		1 1 5 6
 %		2 3 3 9
 %		2 3 5 5
 %		1 2 7 7
+%	    ];
 %
-%	      [1,2] =
-%		col1
-%		col2
-%		col3
-%		col4
-%	}
-%	b = coln(a)
-%	b = {
-%		col2
-%		col4
-%	}
+%	b = all(a)
+%	b = [
+%		1 1 3 4
+%		1 2 7 8
+%		1 1 5 6
+%		2 3 3 9
+%		2 3 5 5
+%		1 2 7 7
+%	    ];
 
-function out = coln(table)
-	out = table{2};
+function out = all(matrix)
+	out = matrix;
 end

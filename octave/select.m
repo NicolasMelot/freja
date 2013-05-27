@@ -82,7 +82,7 @@ function out = select(table, cols, def)
 				already = cellfindstr(selected, col);
 
 				if already > 0
-					new_name = [col '_' int2str(i+j)];
+					new_name = request_name(selected, col);
 					warning(['Column ''' col ''' already inserted; renaming to ''' new_name '''.']);
 					selected = {selected{:} new_name};
 				else
@@ -97,7 +97,9 @@ function out = select(table, cols, def)
 			if index > 0 % The column exists
 				data = [data table{1}(:, index)];
 			else % The column doesn't exist. Filling with default value and create column name as requested
-				warning(['Could not find column ''' col ''' in table. Filling with value ' int2str(def) '.']);
+				if prod(size(strfind(col, 'no_warning'))) == 0
+					warning(['Could not find column ''' col ''' in table. Filling with value ' int2str(def) '.']);
+				end
 				colsize = size(table{1});
 				colsize = colsize(1);
 				data = [data ones(colsize, 1) .* def];
@@ -106,8 +108,9 @@ function out = select(table, cols, def)
 			% Add column name
 			already = cellfindstr(selected, col);
 			if already > 0 % This column was already inserted
+				new_name = request_name(selected, col);
 				warning(['Column ''' col ''' already inserted; renaming to ''' new_name '''.']);
-				col = [col '_' int2str(i)]; % Append a unique number, which argument we are processing
+				col = new_name; % Append a unique number, which argument we are processing
 			end
 			selected = {selected{:} col};
 		end
@@ -116,8 +119,6 @@ function out = select(table, cols, def)
 	out{1} = data;
 	out{2} = selected;
 end
-
-
 
 
 

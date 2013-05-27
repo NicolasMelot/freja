@@ -24,62 +24,75 @@
 %	given columns are identical in every row, but different between rows of
 %	different groups. A group takes shape of a subset data of the whole
 %	table's data. Each row of the original table is mapped to exactly one
-%	group. All groups can then be reduced to one row then merged together
-%	into a single matrix thanks to the function reduce(). The rows within a
-%	group keep the same order as they had in the input matrix.
-%	
+%	group. All groups are then be reduced column by colum using functions 
+%	given in func parameter (at most one function per column), to as many
+%	rows as the maximum amount of values all functions output. If a column
+%	is not given a reduction function, then its first value in the group is
+%	used and other are discarded (apply the function @all to keep all
+%	lines); it is repeated until it fits the final group size. All rows
+%	produced by each column are combined with other columns in a cross-
+%	product manner. If several column reduction result in several lines
+%	then the output group size grow in a factorial manner, use this
+%	feature with caution. Rows within a group keep the same order as they
+%	had in the input table, but they stay grouped. The function may shuffle
+%	columns ordering.
 %	
 %	Parameters:
 %	table:	Table to be separated separate into groups (matrix)
-%	coln:	Column names taken into account when forming
+%	colg:	Column names taken into account when forming
 %		groups (cell of strings).
 %	apply:	Column names on which to apply a function (cell of strings).
 %	func:	Functions to apply to previously mentioned columns. This function
 %		should take a vector as input and output a scalar; @mean and @std
 %		are suitable. Note that columns that do not appear in col or apply
 %		parameters are undefined and can be removed (cell of function
-%		pointers).
+%		pointers). @first and @all respectively return the first row in a
+%		group and all rows of the group.
 %	out:	The table so transformed (table)
 %
 %	Example:
 %	a = {
 %	      [1,1] =
-%		1 1 3 4
-%		1 2 7 8
-%		1 1 5 6
-%		2 3 3 9
-%		2 3 5 5
-%		1 2 7 7
+%		1 1 3 4 8
+%		1 1 5 6 3
+%		2 3 3 9 7
+%		2 3 5 5 6
+%		1 2 7 7 2
 %
 %	      [1,2] =
 %		col1
 %		col2
 %		col3
 %		col4
+%		col5
 %	}
-%	b = groupby(a, {'col1' 'col2'}, {'col3'}, {@mean})
+%	b = groupby(a, {'col1' 'col2'}, {'col3' 'col4'}, {@mean, @returns_2_rows_of_constant_values_x_and_y})
 %	b = {
 %	      [1,1] =
-%		1 1 4 undef
-%		1 2 7 undef
-%		2 3 4 undef
+%		1 1 4 x 8
+%		1 1 4 y 8
+%		1 2 7 x 2
+%		1 2 7 y 2
+%		2 3 4 x 7
+%		2 3 4 y 7
 %
 %	      [1,2] =
 %		col1
 %		col2
 %		col3
 %		col4
+%		col5
 %	}
 
-function out = groupby(table, coln, apply, func)
+function out = groupby(table, colg, apply, func, def)
 
-coln_size = size(coln);
-coln_size = coln_size(2);
+colg_size = size(colg);
+colg_size = colg_size(2);
 
-for i=1:coln_size
-	col(i) = cellfindstr(table{2}, coln{i});
+for i=1:colg_size
+	col(i) = cellfindstr(table{2}, colg{i});
 	if col(i) < 1
-		error(['Could not find column ''' coln{i} ''' in table.']);
+		error(['Could not find column ''' colg{i} ''' in table.']);
 	end
 end
 
@@ -130,21 +143,102 @@ for i = 1:nb_col
 	old_size = new_size;
 end
 
-% now old_recipient holds separated data into groups, let's reduce it into as much lines
-size_grp = size(old_recipient);
-size_grp = size_grp(2);
-
-coln_size = size(coln);
-coln_size = coln_size(2);
+cell_size = size(old_recipient);
+cell_size = cell_size(2);
 
 apply_size = size(apply);
 apply_size = apply_size(2);
 
-out_col = {coln{:} apply{:}};
+func_size = size(func);
+func_size = func_size(2);
+
+if apply_size != func_size
+	error(['Number of columns to be reduced (' int2str(apply_size) ') doesn''t match number of functions provided (' int2str(func_size) ').']);
+end
+
+new_data = [];
+
+for i = 1:cell_size
+	# extract the group's key (denoted by colg parameter).
+	group_key = [];
+	for j = 1:colg_size
+		index = cellfindstr(table{2}, colg{j});		
+		group_key(1, j) = old_recipient{i}(1, index);
+		table_name{1, j} = colg{j};
+	end
+
+	% Take all non-selected columns and add them to the basic group
+	non_selected = except(coln(table), {colg{:} apply{:}});
+	size_non_selected = size(non_selected);
+	size_non_selected = size_non_selected(2);
+
+	for j = 1:size_non_selected
+		index = cellfindstr(table{2}, non_selected{j});
+		group_key(1, colg_size + j) = old_recipient{i}(1, index);
+	end
+
+	# Apply function to the rest of data
+	for j = 1:apply_size
+		index = cellfindstr(table{2}, apply{j});
+		if index < 1
+			error(['Could not find column ''' apply{i} ''' in table.']);
+		end
+
+		new_col = func{j}(old_recipient{i}(:, index));
+		new_col = new_col(:, 1);
+
+		% Get number of rows in both group recomputer this far and the latest column
+		new_col_size = size(new_col);
+		new_col_size = new_col_size(1);
+		group_size = size(group_key);
+		group_size = group_size(1);
+
+		gap = group_size / new_col_size;
+		% Either the group or the new column needs padding
+		if gap != 1
+			padding = [];
+			for k = 2:new_col_size
+				padding = [padding; group_key];
+			end
+			group_key = [group_key; padding];
+
+			padding = [];
+			for l = 1:new_col_size
+				for k = 1:group_size
+					padding = [padding; new_col(l, :)];
+				end
+			end
+			new_col = padding;
+		end
+		group_key = [group_key new_col];
+	end
+
+	new_data = [new_data; group_key];
+end
+
+% Add non-selected and apply column names 
+table_name = {table_name{:} non_selected{:} apply{:}};
+
+% Wrap everything up in a cell
+out = {new_data, table_name};
+
+return
+
+% now old_recipient holds separated data into groups, let's reduce it into as much lines
+size_grp = size(old_recipient);
+size_grp = size_grp(2);
+
+colg_size = size(colg);
+colg_size = colg_size(2);
+
+apply_size = size(apply);
+apply_size = apply_size(2);
+
+out_col = {colg{:} apply{:}};
 
 for i = 1:size_grp
-	for j = 1:coln_size
-		index = cellfindstr(table{2}, coln{j});
+	for j = 1:colg_size
+		index = cellfindstr(table{2}, colg{j});
 		line(1, j) = old_recipient{i}(1, index);
 	end
 	for j = 1:apply_size
@@ -152,7 +246,7 @@ for i = 1:size_grp
 		if index < 1
 			error(['Could not find column ''' apply{i} ''' in table.']);
 		end
-		line(1, j + coln_size) = func{j}(old_recipient{i}(:, index));
+		line(1, j + colg_size) = func{j}(old_recipient{i}(:, index));
 	end
 	data(i, :) = line;
 end

@@ -27,11 +27,13 @@
 %	fignum:	Figure number. A figure of the same number as one or several
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
-%	table:	Matrix containing x and y values to be plotted (matrix).
-%	colx:	Index in the input matrix (data) where the x axis values are 
-%		recorded (scalar).
-%	coly:	Index in the input matrix (data) where the x axis values are 
-%		recorded (scalar).
+%	table:	Table containing data to be plot (table).
+%	colx:	Index in input matrices (table) where the x axis values are 
+%		recorded (string).
+%	coly:	Indexes in input matrices (table) where the y axis values are 
+%		recorded (cell of strings).
+%	filter: Where expression ({"[] {[] []}" "[] $[]}"}) to be applied on table
+%		for the corresponding column in coly parameter (cell of strings).
 %	error:	Base value from which the bar of the histogram start. This
 %		shifts up or down the y value to be plotted. When y values are
 %		high or zeros, a base of -1 makes possible to see bars
@@ -57,16 +59,11 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickplot(fignum, table, colx, coly, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickplot(fignum, table, colx, coly, filter, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
 
-data = table{1, 1};
-data_x = cellfindstr(data{2}, colx);
+data_x = cellfindstr(coln(table), colx);
 if data_x < 1
 	error(['Could not find column ''' colx ''' in table.']);
-end
-data_y = cellfindstr(data{2}, coly);
-if data_y < 1
-	error(['Could not find column ''' coly ''' in table.']);
 end
 
 % Disable window popups when generating a new graph
@@ -74,21 +71,25 @@ set (0, 'defaultfigurevisible', 'off');
 
 figure(fignum);
 
-data = table{1, 1};
-data = data{1};
-plotting(1) = plot(data(:, data_x), data(:, data_y));
-set(plotting(1), 'marker', marks{1, 1});
-set(plotting(1), 'markersize', markss);
-set(plotting(1), 'linewidth', curvew);
-set(plotting(1), 'color', colors{1, 1});
 hold on;
 
-maxi = size(table);
+maxi = size(coly);
 maxi = maxi(2);
-for i = 2:maxi
-	data = table{1, i};
-	data = data{1};
-	plotting(i) = plot(data(:, data_x), data(:, data_y));
+for i = 1:maxi
+	data_y = cellfindstr(coln(table), coly{i});
+	if data_y < 1
+		error(['Could not find column ''' coly{i} ''' in table.']);
+	end
+
+	% Data filtering
+	filtering = strtrim(filter{i});
+	if strcmp(filtering, '') == 0
+		filtering=['where(table, ' filtering ')'];
+	else
+		filtering='table';
+	end
+	src = eval(filtering);
+	plotting(i) = plot(data(src, {colx}, 0), data(src, {coly{i}}, 0));
 
 	set(plotting(i), 'marker', marks{1, i});
 	set(plotting(i), 'markersize', markss);
