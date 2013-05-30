@@ -76,6 +76,12 @@ function out = where(table, cols, refs)
 	for i = 1:max
 		col = cellfindstr(table{2}, cols{i});
 		ref = refs{1, i};
+
+		% Fire an error meesage if a column could not be found
+		if col < 1
+			error(['[where][error] Could not find column ''' cols{i} '''.']);
+			return
+		end
 	
 		cond = matrix(:, col) == ref(1, 1);
 	    

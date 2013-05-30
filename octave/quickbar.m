@@ -37,6 +37,9 @@
 %		value (cell of strings).
 %	filter: Where expression ({'[] {[] []}' '[] $[]}'}) to be applied on table
 %		for the corresponding column in coly parameter (cell of strings).
+%	xval:   Labels to replace each x values (must be of same size as the column
+%		pointed by colx *after* the filter is applied). If the cell is
+%		empty, the colx column is directly used. (cell of strings).
 %	style:	Style of the bar groups at each x step. For instance 'grouped'
 %		or 'stacked'; see help bar (string).
 %	thickn:	Thickness of the bars on the graph (scalar)
@@ -54,7 +57,7 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickbar(fignum, table, colx, coly, filter, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickbar(fignum, table, colx, coly, filter, xval, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
 
 data_x = cellfindstr(coln(table), colx);
 if data_x < 1
@@ -135,6 +138,15 @@ set(g_title, 'fontsize', fonts);
 
 set (findobj (gcf, '-property', 'fontname'), 'fontname', fontn);
 set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
+
+xval_size = prod(size(xval));
+if xval_size > 0
+	if xval_size != maxi
+		error(['[quickplot][error] Have ' maxi ' x values and ' int2str(xval_size) ' labels.']);
+		return
+	end
+	set(gca, 'XTick', x, 'XTickLabel', xval);
+end
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 

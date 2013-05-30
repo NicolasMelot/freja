@@ -105,7 +105,7 @@ old_size = 1;
 old_recipient = {matrix};
 
 for i = 1:nb_col
-	new_recipient = {};
+	new_recipient = {[]};
 	new_size = 0;
 
 	for j = 1:old_size
@@ -181,7 +181,7 @@ for i = 1:cell_size
 	for j = 1:apply_size
 		index = cellfindstr(table{2}, apply{j});
 		if index < 1
-			error(['Could not find column ''' apply{i} ''' in table.']);
+			error(['Could not find column ''' apply{j} ''' in table.']);
 		end
 
 		new_col = func{j}(old_recipient{i}(:, index));

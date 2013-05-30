@@ -34,6 +34,9 @@
 %		recorded (cell of strings).
 %	filter: Where expression ({"[] {[] []}" "[] $[]}"}) to be applied on table
 %		for the corresponding column in coly parameter (cell of strings).
+%	xval:   Labels to replace each x values (must be of same size as the column
+%		pointed by colx *after* the filter is applied). If the cell is
+%		empty, the colx column is directly used. (cell of strings).
 %	error:	Base value from which the bar of the histogram start. This
 %		shifts up or down the y value to be plotted. When y values are
 %		high or zeros, a base of -1 makes possible to see bars
@@ -59,7 +62,7 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickplot(fignum, table, colx, coly, filter, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickplot(fignum, table, colx, coly, filter, xval, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
 
 data_x = cellfindstr(coln(table), colx);
 if data_x < 1
@@ -113,6 +116,18 @@ set(g_title, 'fontsize', fonts);
 
 set (findobj (gcf, '-property', 'fontname'), 'fontname', fontn);
 set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
+
+data_x_size = data(src, {colx}, 0);
+data_x_size = size(data_x_size);
+data_x_size = data_x_size(1);
+xval_size = prod(size(xval));
+if xval_size > 0
+	if xval_size != data_x_size
+		error(['[quickplot][error] Have ' int2str(data_x_size) ' x values and ' int2str(xval_size) ' labels.']);
+		return
+	end
+	set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', xval);
+end
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 
