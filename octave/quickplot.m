@@ -44,8 +44,10 @@
 %	colors:	Colors of the curves to plot. Each color is represented by either
 %		a string ('red', 'blue') or an RGB vector (cell of string and/or
 %		vectors).
-%	marks:	Marks to draw at each point of curves in the graph (cell of
-%		strings).
+%		Example: {[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5] [0 0.5 0]
+%			  [0 0 0.5] [0.5 0 0.5]}.
+%	marks:	Marks to draw at each point of curves in the graph (examples: 
+%		'o' '^' '.' 'x' '>' '<' 'v' '*') (cell of strings).
 %	markss:	Size of the marks (scalar).
 %	curvew:	Thickness of the curves on the graph (scalar)
 %	fontn:	Name of the font to use when writing legend, title and labelling
@@ -122,7 +124,7 @@ data_x_size = size(data_x_size);
 data_x_size = data_x_size(1);
 xval_size = prod(size(xval));
 if xval_size > 0
-	if xval_size != data_x_size
+	if xval_size < data_x_size
 		error(['[quickplot][error] Have ' int2str(data_x_size) ' x values and ' int2str(xval_size) ' labels.']);
 		return
 	end

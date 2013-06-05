@@ -141,8 +141,8 @@ set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
 
 xval_size = prod(size(xval));
 if xval_size > 0
-	if xval_size != maxi
-		error(['[quickplot][error] Have ' maxi ' x values and ' int2str(xval_size) ' labels.']);
+	if xval_size < maxi
+		error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' labels.']);
 		return
 	end
 	set(gca, 'XTick', x, 'XTickLabel', xval);

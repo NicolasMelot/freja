@@ -119,8 +119,8 @@ quickplot(1,
 	{'global_time', 'global_time'}, % Columns for y values
 	{'{''ct''}, {[100000000]}', '{''ct''}, {[200000000]}'}, % Filters for columns mentioned earlier.
 	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5]}, % Colors to be applied to the curves, written in RGB vector format
-	{'o' '^' '.' 'x' '>' '<'}, % Enough markers for 6 curves. Browse the web to find more.
+	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5] [0 0.5 0] [0 0 0.5] [0.5 0 0.5]}, % Colors to be applied to the curves, written in RGB vector format
+	{'o' '^' '.' 'x' '>' '<' 'v' '*'}, % Enough markers for 6 curves. Browse the web to find more.
 	2, 5, 'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Global time to perform 100 and 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
 	{'100m iteration, 0.1 entropy ' '200m iteration, 0.01 entropy ' '100m iteration, 0.00001 entropy ' '300m iteration, 0.00001 entropy ' }, % Labels for curves
@@ -134,8 +134,8 @@ quickerrorbar(2,
 	{'global_stddev'}, % Columns for standard deviation
 	{'{''ct''}, {[100000000]}'}, % Filters for each curve to be plotted (100 million jumps only)
 	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5]}, % Colors to be applied to the curves, written in RGB vector format
-	{'o' '^' '.' 'x' '>' '<'}, % Enough markers for 6 curves. Browse the web to find more.
+	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5] [0 0.5 0] [0 0 0.5] [0.5 0 0.5]}, % Colors to be applied to the curves, written in RGB vector format
+	{'o' '^' '.' 'x' '>' '<' 'v' '*'}, % Enough markers for 6 curves. Browse the web to find more.
 	2, 5, 'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
 	{'100m iteration, 0.1 entropy '}, % Labels for curves
@@ -161,8 +161,8 @@ quickerrorbar(3,
 	{'global_stddev'}, % Columns for standard deviation
 	{'{''ct''}, {[200000000]}'}, % Filters for each curve to be plotted (100 million jumps only)
 	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5]}, % Colors to be applied to the curves, written in RGB vector format
-	{'o' '^' '.' 'x' '>' '<'}, % Enough markers for 6 curves. Browse the web to find more.
+	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5] [0 0.5 0] [0 0 0.5] [0.5 0 0.5]}, % Colors to be applied to the curves, written in RGB vector format
+	{'o' '^' '.' 'x' '>' '<' 'v' '*'}, % Enough markers for 6 curves. Browse the web to find more.
 	2, 5, 'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
 	{'100m iteration, 0.1 entropy '}, % Labels for curves
