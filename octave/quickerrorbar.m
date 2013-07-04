@@ -70,6 +70,18 @@ if data_x < 1
 	error(['Could not find column ''' colx ''' in table.']);
 end
 
+% Duplicate y and err columns with a new unique name, to avoid a uselessly worrying warning messages about already existing columns
+cellsize = size(coly);
+cellsize = cellsize(2);
+for i = 1:cellsize
+	existing = coln(table);
+	new_coly{i} = request_name(existing, coly{i});
+	new_err{i} = request_name(existing, err{i});
+	table = duplicate(table, {coly{i} err{i}}, {new_coly{i} new_err{i}});
+end
+coly = new_coly;
+err = new_err;
+
 % Disable window popups when generating a new graph
 set (0, 'defaultfigurevisible', 'off');
 
