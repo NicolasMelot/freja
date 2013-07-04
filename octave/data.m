@@ -34,3 +34,4 @@ function out = data(table, col, def)
 	out = select(table, col, def);
 	out = out{1};
 end
+
