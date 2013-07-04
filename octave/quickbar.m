@@ -116,7 +116,11 @@ set (0, 'defaultfigurevisible', 'off');
 hold on;
 handle = bar(x, y', thickn, style);
 
+if style == 'grouped'
 max_value = max(max(y));
+else
+max_value = max(sum(y));
+end
 min_value = min(min(y));
 
 ylim([min_value - (max_value - min_value) / y_marging, max_value + (max_value - min_value) / y_marging]);
