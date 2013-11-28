@@ -79,14 +79,14 @@ function out = prebar(table, colx, coly, def)
 	% Make a new row for group sizes
 	out = select(table, {'' column_size, line_id}, 0);
 	% Give each line the size of the group they belong to
-	out = groupby(out, {colx}, {coly column_size}, {@all, @group_size});
+	out = groupby(out, {colx}, {coly column_size}, {@alllines, @group_size});
 	% How much lines per group (how much columns are to be created? Useful for next phase)
 	lines_per_group = data(out, {column_size}, 0);
 	lines_per_group = max(lines_per_group);
 	% Spread out maximal group size to all lines
 	out = apply(out, {column_size}, {@spread_max_size}, 0);
 	% Write in extra column how many duplicate we need
-	out = groupby(out, {colx}, {coly column_size}, {@all, @how_many_duplicate});
+	out = groupby(out, {colx}, {coly column_size}, {@alllines, @how_many_duplicate});
 	% Give each line a unique identifier
 	out = apply(out, {line_id}, {@give_lines_id}, 0);
 	% Isolate each line, duplicate lines marked as such and mark duplicate lines as opposed to others
