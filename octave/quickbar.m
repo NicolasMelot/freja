@@ -35,8 +35,8 @@
 %		recorded (string).
 %	coly:	All columns where y data is fetch from, one per bar at every x
 %		value (cell of strings).
-%	filter: Where expression ({'[] {[] []}' '[] $[]}'}) to be applied on table
-%		for the corresponding column in coly parameter (cell of strings).
+%	filter: 'where' expression ('[] {[] []}') to be applied on table
+%		for all columns in coly parameter. '' is no filter (strings).
 %	xval:   Labels to replace each x values (must be of same size as the column
 %		pointed by colx *after* the filter is applied). If the cell is
 %		empty, the colx column is directly used. (cell of strings).

@@ -18,7 +18,7 @@
 %
 % =========================================================================
 %
-%	Function all
+%	Function alllines
 %
 %	Returns the input matrix with no transformation.
 %	
@@ -37,7 +37,7 @@
 %		1 2 7 7
 %	    ];
 %
-%	b = all(a)
+%	b = alllines(a)
 %	b = [
 %		1 1 3 4
 %		1 2 7 8
@@ -47,6 +47,6 @@
 %		1 2 7 7
 %	    ];
 
-function out = all(matrix)
+function out = alllines(matrix)
 	out = matrix;
 end

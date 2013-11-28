@@ -35,7 +35,7 @@
 %		strings). 
 %	err:	Columns from input table from which error bars are draw (cell of
 %		strings).
-%	filter: Where expression ({"[] {[] []}" "[] $[]}"}) to be applied on table
+%	filter: Where expression ({"[] {[] []}" "[] []}"}) to be applied on table
 %		for the corresponding column in coly parameter (cell of strings).
 %	colors:	Colors of the curves to plot. Each color is represented by either
 %		a string ('red', 'blue') or an RGB vector (cell of string and/or
@@ -77,7 +77,7 @@ for i = 1:cellsize
 	existing = coln(table);
 	new_coly{i} = request_name(existing, coly{i});
 	new_err{i} = request_name(existing, err{i});
-	table = duplicate(table, {coly{i} err{i}}, {new_coly{i} new_err{i}});
+	table = duplicate(table, {coly{i} err{i}}, {new_coly{i} new_err{i}}, 0);
 end
 coly = new_coly;
 err = new_err;
