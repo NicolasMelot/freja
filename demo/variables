@@ -27,6 +27,6 @@ nb_threads=`seq 0 3`
 
 run=(ct try)
 
-ct="100000000 200000000"		# amount of data to be written to main memory
+ct="400000000 500000000"		# amount of data to be written to main memory
 try=`seq 1 3`				# Number of different run per setting
 

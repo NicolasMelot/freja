@@ -64,6 +64,11 @@ get_date()
 	echo `date +%D\ %R:%S`
 }
 
+get_date_filename()
+{
+	date|tr ' ' _|tr : -
+}
+
 build_args()
 {
 	# $1 is the variable containing the list of variables to be listed
@@ -97,18 +102,46 @@ count_args()
 	echo $count
 }
 
-merge_data()
+merge_dir()
 {
-	info Merging all results of the same experiment together
+	output_file="$1"
+	shift
 
-	echo -e $DATA_BEGIN > $data$ext
-	ls $data-$experiment-*$ext|while read file; do echo %\ $file; cat $file|grep -v function|grep -v ^x|grep -v end|grep -v ']'|grep -v '}'|grep -v ^$|grep -v \'; done >> $data$ext
-	echo -e $DATA_END >> $data$ext
+	info Merging all results to $output_file
 
-	echo -e $COLUMNS_BEGIN >> $data$ext
-	output=$(cat $data-$experiment-*$ext|tr \\\t ' '|tr -s ' '|grep -v ^$|grep "$(echo -e $COLUMNS_BEGIN|head -n 1|tr \\\n ' '|tr -s ' '|xargs echo)" -A 2|tail -n 1|tr -d \')
-	echo $output|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $data$ext
-	echo -e $COLUMNS_END >> $data$ext
+	echo -e $DATA_BEGIN > $output_file
+	while [ "$#" != "0" ]
+	do
+		input_dir=$1
+
+		## Process this argument only if it is a directory
+		if [ -d $input_dir ]
+		then
+			ls $input_dir/${output_base}_*_{$output_success,$output_failure}* 2> /dev/null | sort -V | xargs cat | while read line;
+			do
+				# Add content to output file
+				content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`
+				if [ "x`echo $content | grep ^%`" == "x" ]; then
+					echo $flags $args $content >> $output_file
+				else
+					if [ "x`echo $line | tr \\\t ' ' | tr -d ' ' | grep ^%$columns_list_name=`" == "x" ]; then
+						echo $line >> $output_file
+					else
+						echo $line | cut -f 2 -d = > $columns_file
+					fi
+				fi
+			done
+		fi
+	
+		shift
+	done
+	echo -e $DATA_END >> $output_file
+
+	echo -e $COLUMNS_BEGIN >> $output_file
+	fields="`cat $columns_file | head -1`"
+	rm $columns_file
+	echo ${compile[@]}\ ${run[@]}\ $fields|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $output_file
+	echo -e $COLUMNS_END >> $output_file
 }
 
 compile()
@@ -177,106 +210,108 @@ batch()
 
 	# Initialize output file
 	start_time=`date +%s`
-	filename=$data-$experiment-`date|tr ' ' _|tr : -`$ext
+	#filename=$data-$experiment-`date|tr ' ' _|tr : -`$ext
+	output_dir=$experiment/$output_dir_current
 
-	echo -e $DATA_BEGIN > $filename
+	#echo -e $DATA_BEGIN > $filename
+	mkdir -p $output_dir
 
 	batch_success=0
 	compile_counter=0
-	build_args ${compile[@]}|while read flags; do
+	batch_time=0
+	skipped=0
+
+	while read flags
+	do
 		run_counter=1
 		run_success=0
-		total_time=0
 
-		build_args ${run[@]}|while read args; do
-			info_start Instance $((compile_counter * $run_instances + $run_counter))/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
+		while read args
+		do
+			instance_number=$((compile_counter * $run_instances + $run_counter))
+			info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 			instance_start=`date +%s`
 
-			old_size=$(cat $filename|wc -l)
+			#old_size=$(cat $filename|wc -l)
+			basename=${output_base}_${instance_number}
 
-			bash ./run $flags $args|while read line;
-			do
-				# Add content to output file
-				content=`echo $line|tr \\\t ' '|tr -s ' '|xargs echo`
-				if [ "x`echo $content|grep ^%`" == "x" ]; then
-					echo $flags $args $content >> $filename
-				else
-					if [ "x`echo $line|tr \\\t ' '|tr -d ' '|grep ^%$columns_list_name=`" == "x" ]; then
-						echo $line >> $filename
-					else
-						echo $line|cut -f 2 -d = > $columns_file
-					fi
-				fi
-			done
-	
-			success=${PIPESTATUS[0]}
-			if [ "x$success" == "x0" ]; then
-				outcome="OK"
+			## Only run this experiment if there is no output for this one
+			if [ -f $output_dir/${basename}_$output_success ]
+			then
+				outcome="Skipped"
+				skipped=$(($skipped + 1))
 			else
-				outcome="Failed"
-
-				# Remove lines from output file
-				new_size=$(cat $filename|wc -l)
-				out_size=$(($new_size - $old_size))
-				
-				cat $filename|head -$old_size > $passed_file
-				cat $filename|tail -$out_size > $failed_file
-				cp $passed_file $filename
-				rm $passed_file
-
-				echo % $failed_begin >> $filename
-				cat $failed_file|while read line_fail; do
-					echo % $line_fail >> $filename
+				## This one is already done, skip
+				bash ./run $flags $args | while read line;
+				do
+					content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`
+					if [ "x`echo $content|grep ^%`" == "x" ]; then
+						echo $flags $args $content >> $output_dir/${basename}_$output_progress
+					else
+						echo $line >> $output_dir/${basename}_$output_progress
+					fi
 				done
-				echo % $failed_end >> $filename
-				rm $failed_file
 
-				run_success=1
+				success=${PIPESTATUS[0]}
+				if [ "x$success" == "x0" ]; then
+					outcome="OK"
+					mv $output_dir/${basename}_$output_progress $output_dir/${basename}_$output_success
+				else
+					outcome="Failed"
+					## Annotate output as failed
+					## Create a numeric suffix in case of successive failures
+					num=`ls $output_dir/${basename}_${output_failure}* 2> /dev/null | wc -l`
+					if [ "$num" == "0" ]
+					then
+						num=""
+					else
+						num=_$num
+					fi
+
+					echo % $failed_begin > $output_dir/${basename}_${output_failure}$num
+					cat $output_dir/${basename}_${output_progress} | while read line_fail; do
+						echo % $line_fail >> $output_dir/${basename}_${output_failure}$num
+					done
+					echo % $failed_end >> $output_dir/${basename}_${output_failure}$num
+					rm $output_dir/${basename}_$output_progress
+
+					run_success=1
+				fi
 			fi
 
 			instance_stop=`date +%s`
 
+			## Evaluate how much time is left before completion based on average time to run previous experiments, not taking into account the ones skipped
 			run_time=$(($instance_stop - $instance_start))
-			total_time=$(($total_time + $run_time))
-			remaining=$((($total_instances - $run_counter) * ($total_time / $run_counter)))
+			batch_time=$(($batch_time + $run_time))
+			total_run=$(($instance_number - $skipped))
+			if [ "$total_run" == "0" ]
+			then
+				total_run=1
+			fi
+			remaining=$((($total_instances - $instance_number) * ($batch_time / $total_run)))
 			info_stop $outcome. $run_time sec finished on $(echo -n `get_date`)\; approx. $remaining sec left \($(($remaining / 60)) minutes\)
 
-			if [ "x$run_counter" == "x$run_instances" ]; then
-				exit $run_success
-			fi
-
 			run_counter=$(($run_counter + 1))
-		done
+		done < <(build_args ${run[@]})
 
-		success=${PIPESTATUS[1]}
-		if [ "x$success" == "x0" ]; then
+		if [ "x$run_success" == "x0" ]; then
 			outcome="OK"
 		else
 			outcome="Failed"
 			batch_success=1
 		fi
 
-		if [ "x$compile_counter" == "x$(($compile_instances - 1))" ]; then
-			exit $batch_success
-		fi
-
 		compile_counter=$(($compile_counter + 1))
-	done
+	done < <(build_args ${compile[@]})
 
-	batch_success=${PIPESTATUS[1]}
 	if [ "x$batch_success" == "x0" ]; then
 		batch_outcome="Success"
 	else
 		batch_outcome="Failed"
 	fi
 
-	# Finalize output file
-	echo -e $DATA_END >> $filename
-	echo -e $COLUMNS_BEGIN >> $filename
-	fields="`cat $columns_file|head -1`"
-	rm $columns_file
-	echo ${compile[@]}\ ${run[@]}\ $fields|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $filename
-	echo -e $COLUMNS_END >> $filename
+	merge_dir $output_dir/$data$ext $output_dir
 
 	stop_time=`date +%s`
 	overall_time=$(($stop_time - start_time))
@@ -306,7 +341,16 @@ case "x$operation" in
 		else
 			batch
 			batch_success=$?
-			merge_data
+			
+			if [ "$batch_success" == "0" ]
+			then
+				filename=`get_date_filename`
+				mv $experiment/$output_dir_current $experiment/$filename
+			else
+				filename=$output_dir_current
+			fi
+			merge_dir $experiment/$data$ext `ls -d $experiment/*`
+			cp $experiment/$data$ext .
 
 			exit $batch_success
 		fi
@@ -315,11 +359,11 @@ case "x$operation" in
 	"xmerge")
 		if [ "x$experiment" == "x" ];
 		then
-			error You must name the experiment to be run
+			error You must name the experiment to be merged
 			usage
 			exit 1
 		else
-			merge_data
+			merge_dir $experiment/$data$ext `ls -d $experiment/*`
 
 			exit 0
 		fi

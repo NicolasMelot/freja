@@ -29,6 +29,11 @@ failed_file=$temp/pid.$$.failed
 passed_file=$temp/pid.$$.passed
 data=$table_name
 ext=.m
+output_dir_current=current
+output_success=success
+output_failure=failure
+output_progress=progress
+output_base=instance
 
 DATA_BEGIN="function x = $table_name()\\nx = {["
 DATA_END="] $columns_list_name()};\\nend\\n"
