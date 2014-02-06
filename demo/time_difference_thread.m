@@ -37,5 +37,5 @@ function y = time_difference_thread(row, col, aux)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-	y = (((data(row, {'thread_stop_sec'}, 0) - data(row, {'thread_start_sec'}, 0)) .* NSEC_IN_SEC + data(row, {'thread_stop_nsec'}, 0) - data(row, {'thread_start_nsec'}, 0))) ./ NSEC_IN_MSEC;
+	y = (((data(row, {'thread stop sec'}, 0) - data(row, {'thread start sec'}, 0)) .* NSEC_IN_SEC + data(row, {'thread stop nsec'}, 0) - data(row, {'thread start nsec'}, 0))) ./ NSEC_IN_MSEC;
 end

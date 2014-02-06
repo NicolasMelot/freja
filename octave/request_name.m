@@ -50,10 +50,10 @@ function out = request_name(cnames, request)
 	max_num = 2;
 	for i = 1:cnames_size
 		name = cnames{i};
-		refname = regexp(request, '^((\w*)_[0-9]+|(\w*))$', 'tokens');
+		refname = regexp(request, '^((\w+[\w ]*\w) [0-9]+|(\w+[\w ]*\w))$', 'tokens');
 		refname = refname{1, 1};
 		refname = refname{1, 2};
-		[match num] = regexp(name, ['^' refname '(?:_([0-9]+))?$'], 'start', 'tokens');
+		[match num] = regexp(name, ['^' refname '(?: ([0-9]+))?$'], 'start', 'tokens');
 	
 		if prod(size(match)) > 0
 			% Found a match
@@ -65,7 +65,7 @@ function out = request_name(cnames, request)
 				max_num = max(num, max_num);
 			end
 			
-			out = [refname '_' int2str(max_num)];
+			out = [refname ' ' int2str(max_num)];
 		end
 	end
 end

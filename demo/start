@@ -1,7 +1,13 @@
-#!/bin/bash -f
+#!/bin/bash
 
+## Load global settings
 . ./settings
+
+## Load experiment variable data
 . ./variables
+
+## Load functions to resolve aliases
+. ./resolver
 
 log_start()
 {
@@ -109,6 +115,7 @@ merge_dir()
 
 	info Merging all results to $output_file
 
+	## Output data to file
 	echo -e $DATA_BEGIN > $output_file
 	while [ "$#" != "0" ]
 	do
@@ -117,31 +124,61 @@ merge_dir()
 		## Process this argument only if it is a directory
 		if [ -d $input_dir ]
 		then
-			ls $input_dir/${output_base}_*_{$output_success,$output_failure}* 2> /dev/null | sort -V | xargs cat | while read line;
-			do
-				# Add content to output file
-				content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`
-				if [ "x`echo $content | grep ^%`" == "x" ]; then
-					echo $flags $args $content >> $output_file
-				else
-					if [ "x`echo $line | tr \\\t ' ' | tr -d ' ' | grep ^%$columns_list_name=`" == "x" ]; then
-						echo $line >> $output_file
-					else
-						echo $line | cut -f 2 -d = > $columns_file
-					fi
-				fi
-			done
+			echo % From $input_dir >> $output_file
+			ls $input_dir/${output_base}_*_{$output_success,$output_failure}* 2> /dev/null | sort -V | xargs cat | tr \\\t ' ' | tr -s ' ' >> $output_file
 		fi
 	
 		shift
 	done
 	echo -e $DATA_END >> $output_file
 
+	## Output column names to file
 	echo -e $COLUMNS_BEGIN >> $output_file
-	fields="`cat $columns_file | head -1`"
-	rm $columns_file
-	echo ${compile[@]}\ ${run[@]}\ $fields|tr \\\t ' '|tr -s ' '|tr ' ' \\\n|while read line; do echo -en \'$line\'\ ; done >> $output_file
+	echo ${compile[@]}\ ${run[@]}\ $output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | while read line; do echo -en \'$line\'\ | tr _ ' ' | tr '~' '_'; done >> $output_file
 	echo -e $COLUMNS_END >> $output_file
+
+	## Output value aliases to file
+	echo -e $ALIAS_BEGIN >> $output_file
+	local variable="${compile[@]} ${run[@]} $output_columns"
+	eval variable=\($variable\)
+	variable_size=${#variable[@]}
+
+	seq 0 $(($variable_size - 1)) | tr ' ' \\\n | while read i
+	do
+		local alias=alias_${variable[$i]}
+		eval alias=\('$'$alias\)
+		local alias_size=${#alias[@]}
+
+		if (( $alias_size > 0 ))
+		then
+			## If it has an alias, then generate a row with alias values
+			echo -n "{"
+			for i in ${alias[@]}
+			do
+				echo -n \'$i\'\  
+			done
+			echo -n "} "
+		else
+			## Otherwise...
+			local values=${variable[$i]}
+			eval values=\('$'$values\)
+
+			if ! is_number_seq ${values[@]}
+			then
+				## If it is NOT a numeric column, then generate a row with non-numeric raw values
+				echo -n "{"
+				for i in ${values[@]}
+				do
+					echo -n \'$i\'\  
+				done
+				echo -n "} "
+			else
+				## Else generate an empty row
+				echo -n '{} '
+			fi
+		fi
+	done | tr _ ' ' | tr '~' _ >> $output_file
+	echo -e $ALIAS_END >> $output_file
 }
 
 compile()
@@ -223,14 +260,15 @@ batch()
 	do
 		run_counter=1
 		run_success=0
+		flags_index=`index_seq compile $flags`
 
 		while read args
 		do
 			instance_number=$((compile_counter * $run_instances + $run_counter))
 			info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 			instance_start=`date +%s`
+			args_index=`index_seq run $args`
 
-			#old_size=$(cat $filename|wc -l)
 			basename=${output_base}_${instance_number}
 
 			## Only run this experiment if there is no output for this one
@@ -239,12 +277,11 @@ batch()
 				outcome="Skipped"
 				skipped=$(($skipped + 1))
 			else
-				## This one is already done, skip
 				bash ./run $flags $args | while read line;
 				do
 					content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`
 					if [ "x`echo $content|grep ^%`" == "x" ]; then
-						echo $flags $args $content >> $output_dir/${basename}_$output_progress
+						echo $flags_index $args_index $content >> $output_dir/${basename}_$output_progress
 					else
 						echo $line >> $output_dir/${basename}_$output_progress
 					fi
@@ -309,8 +346,6 @@ batch()
 		batch_outcome="Failed"
 	fi
 
-	merge_dir $output_dir/$data$ext $output_dir
-
 	stop_time=`date +%s`
 	overall_time=$(($stop_time - start_time))
 
@@ -347,7 +382,9 @@ case "x$operation" in
 			else
 				filename=$output_dir_current
 			fi
-			cp $experiment/$filename/$data$ext .
+			merge_dir $experiment/$filename/$data$ext $experiment/$filename
+			merge_dir $experiment/$data$ext `ls -d $experiment/*`
+			cp $experiment/$data$ext .
 
 			exit $batch_success
 		fi

@@ -1,4 +1,4 @@
-#!/bin/bash -f
+#!/bin/bash
 
 #     Copyright 2011 Nicolas Melot
 # 
@@ -21,12 +21,20 @@
 # Never use these names for run or compile features
 # count
 
+## Compile-time settings
 compile=(entropy nb_threads)
 entropy="0.4"				# Randomness in the calculation time
-nb_threads=`seq 0 8`
+nb_threads="sequential overhead `seq 2 8`"
 
+## Run-time settings
 run=(ct try)
-
 ct="100000000 200000000"		# amount of data to be written to main memory
 try=`seq 1 10`				# Number of different run per setting
 
+## Run-time data
+output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec"
+
+## Aliases for settings or columns (matching index value starting at 0)
+alias_ct="100_millions 200_millions "
+alias_thread="SEQ T1 T2 T3 T4 T5 T6 T7 T8"
+alias_try="1 2 3 4 5 6 7 8 9 10"

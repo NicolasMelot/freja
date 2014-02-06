@@ -151,17 +151,6 @@ main(int argc, char ** argv)
 #ifdef MEASURE
   clock_gettime(CLOCK_MONOTONIC, &stop);
 
-  printf("%% table_columns=\
-    thread \
-    start_time_sec \
-    start_time_nsec \
-    stop_time_sec \
-    stop_time_nsec \
-    thread_start_sec \
-    thread_start_nsec \
-    thread_stop_sec \
-    thread_stop_nsec \
-  \n");
 #if NB_THREADS > 0
   for (i = 0; i < NB_THREADS; i++)
     {

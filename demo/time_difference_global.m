@@ -37,5 +37,5 @@ function y = time_difference_global(row, col, aux)
 	NSEC_IN_SEC = 1000000000;
 	MSEC_IN_SEC = 1000;
 	NSEC_IN_MSEC = NSEC_IN_SEC / MSEC_IN_SEC;
-	y = (((data(row, {'stop_time_sec'}, 0) - data(row, {'start_time_sec'}, 0)) .* NSEC_IN_SEC + data(row, {'stop_time_nsec'}, 0) - data(row, {'start_time_nsec'}, 0))) ./ NSEC_IN_MSEC;
+	y = (((data(row, {'stop time sec'}, 0) - data(row, {'start time sec'}, 0)) .* NSEC_IN_SEC + data(row, {'stop time nsec'}, 0) - data(row, {'start time nsec'}, 0))) ./ NSEC_IN_MSEC;
 end

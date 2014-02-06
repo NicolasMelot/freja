@@ -1,4 +1,4 @@
-#!/bin/bash -f
+#!/bin/bash
 
 #     Copyright 2011 Nicolas Melot
 # 
@@ -18,9 +18,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## Load tools to convert string values to index (index <variable> <value>) or the reverse operation (value <variable> <index>)
+. ./resolver
+
 entropy=$1
 nb_threads=$2
 
-make ENTROPY=$entropy NB_THREADS=$nb_threads SUFFIX=-$entropy-$nb_threads
+make ENTROPY=$entropy NB_THREADS=`index nb_threads $nb_threads` SUFFIX=-$entropy-$nb_threads
 
 exit $?
