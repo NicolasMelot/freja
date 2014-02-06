@@ -23,10 +23,10 @@
 
 compile=(entropy nb_threads)
 entropy="0.4"				# Randomness in the calculation time
-nb_threads=`seq 0 3`
+nb_threads=`seq 0 8`
 
 run=(ct try)
 
-ct="400000000 500000000"		# amount of data to be written to main memory
-try=`seq 1 3`				# Number of different run per setting
+ct="100000000 200000000"		# amount of data to be written to main memory
+try=`seq 1 10`				# Number of different run per setting
 
