@@ -37,6 +37,9 @@
 %		strings).
 %	filter: Where expression ({"[] {[] []}" "[] []}"}) to be applied on table
 %		for the corresponding column in coly parameter (cell of strings).
+%	xval:   Labels to replace each x values (must be of same size as the column
+%		pointed by colx *after* the filter is applied). If the cell is
+%		empty, the colx column is directly used. (cell of strings).
 %	colors:	Colors of the curves to plot. Each color is represented by either
 %		a string ('red', 'blue') or an RGB vector (cell of string and/or
 %		vectors).
@@ -53,9 +56,6 @@
 %	y_size:	Height of the canvas in pixels, along the y axis (scalar).
 %	x_axis:	Label for x axis (string).
 %	y_axis:	Label for y axis (string).
-%	xval:   Labels to replace each x values (must be of same size as the column
-%		pointed by colx *after* the filter is applied). If the cell is
-%		empty, the colx column is directly used. (cell of strings).
 %	grapht:	Title of the graph (string).
 %	graphl: Label of all curves or bars in the graph (cell of string).
 %	legloc: Legend location, for example :'northeast'; see help legend (string).

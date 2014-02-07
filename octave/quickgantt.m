@@ -41,8 +41,9 @@
 %		(scalar)
 %	ptrn:	Hatch pattern to draw (if any). Diagonals ('nwse'), other diagonals
 %		('swne'), horizontal ('hrzt'), vertical ('vert'), crosses ('cross')
-%		of squares ('sqrt') (string)
-%	ptrnst:	Pattern line style ('-' '--' ':' '-.' 'none') (string)
+%		of squares ('sqrt') (cell of strings)
+%	ptrnst:	Pattern line style ('-' '--' ':' '-.' 'none'). Octave support for
+%		other styles than '-' is apparently broken (cell of strings).
 %	ptrnc:	Color for hatches, similar to colors.
 %	ptrns:	Thickness of pattern lines (scalar)
 %	ptrnd:	Distance between two pattern lines (scalar)
@@ -54,7 +55,7 @@
 %	x_axis:	Label for x axis (string).
 %	y_axis:	Label for y axis (string).
 %	grapht:	Title of the graph (string).
-%	graphl: Label of all curves or bars in the graph (cell of string).
+%	graphl: Label of all curves or bars in the graph (cell of strings).
 %	outf:	Filename to output the graph (string).
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).

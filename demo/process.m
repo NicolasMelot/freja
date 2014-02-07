@@ -19,12 +19,15 @@
 % =============================================================================
 %
 %
-%	Load, transform and plot the data collected through experiments, using
+%	Loads and transforms the data collected through experiments, using
 %	All data manipulation functions as well as custom functions. This script
 %	is very dense regarding the meaning of all statements and parameters. Be
 %	very carefull when modifying or writing such a file as errors may be tiny
-%	but have drastic conseauences and are difficult to track.
+%	but have drastic consequences and are difficult to track.
 %	
+
+%% Load settings
+settings
 
 % Local row-per-row tranformation functions
 function y = global_start(row, col)
@@ -111,86 +114,3 @@ for i = 1:msize
 	cell{i} = matrix(i, :); % Add a matrix's line to the cell
 end
 
-% Third part: use plotting function to generate graphs, format and store them in graphic files.
-% /!\ Matlab does not support line breaks in the middle of function calls. If you use Matlab, remove the comments and write the function call to quickplot, quickerrorbar and and quickbar in one line only.
-quickplot(1,
-	global_timing_04, % Table to take data from
-	'nb threads', % Column for x values
-	{'global time', 'global time'}, % Columns for y values
-	{'{''ct''}, {[100000000]}', '{''ct''}, {[200000000]}'}, % Filters for columns mentioned earlier.
-	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5] [0 0.5 0] [0 0 0.5] [0.5 0 0.5]}, % Colors to be applied to the curves, written in RGB vector format
-	{'o' '^' '.' 'x' '>' '<' 'v' '*'}, % Enough markers for 6 curves. Browse the web to find more.
-	2, 5, 'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Global time to perform 100 and 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.4 entropy ' '200m iteration, 0.4 entropy '}, % Labels for curves
-	'northeast', 'timing-error.eps', 'epsc'); % Layout of the legend, file to write the plot to and format of the output file
-
-% The two following graphs are combined together
-quickerrorbar(2,
-	global_timing_04, % Plot global timings.
-	'nb threads', % Column for x
-	{'global time'}, % Columns for y (one curve per column)
-	{'global stddev'}, % Columns for standard deviation
-	{'{''ct''}, {[100000000]}'}, % Filters for each curve to be plotted (100 million jumps only)
-	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5] [0 0.5 0] [0 0 0.5] [0.5 0 0.5]}, % Colors to be applied to the curves, written in RGB vector format
-	{'o' '^' '.' 'x' '>' '<' 'v' '*'}, % Enough markers for 6 curves. Browse the web to find more.
-	2, 5, 'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.1 entropy '}, % Labels for curves
-	'northeast', 'timing-100.eps', 'epsc'); % Layout of the legend, file to write the plot to and format of the output file
-
-quickbar(2,
-	prebar(where(thread_timing_04, {'ct'}, {[100000000]}), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
-	'nb threads', % x values
-	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, % Values for y, one column per bar
-	'', % Data filter to apply before plotting (100 million jumps only)
-	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	'grouped', 0.5, % Style of the bars ('grouped' or 'stacked')
-	'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.1 entropy ' 'thread 1 ' 'thread 2 ' 'thread 3 ' 'thread 4 ' 'thread 5 ' 'thread 6 ' 'thread 7 ' 'thread 8 '}, % Labels for curves of the previous graph and bars from this graph
-	'northeast', 'timing-100.eps', 'epsc'); % Layout of the legend, file to write the plot to and format of the output file
-
-% The two following graphs are combined together
-quickerrorbar(3,
-	global_timing_04, % Plot global timings.
-	'nb threads', % Column for x
-	{'global time'}, % Columns for y (one curve per column)
-	{'global stddev'}, % Columns for standard deviation
-	{'{''ct''}, {[200000000]}'}, % Filters for each curve to be plotted (100 million jumps only)
-	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	{[1 0 0] [1 0 1] [0 0 1] [0 0 0] [0 0.5 0.5] [0 0.5 0] [0 0 0.5] [0.5 0 0.5]}, % Colors to be applied to the curves, written in RGB vector format
-	{'o' '^' '.' 'x' '>' '<' 'v' '*'}, % Enough markers for 6 curves. Browse the web to find more.
-	2, 5, 'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.1 entropy '}, % Labels for curves
-	'northeast', 'timing-200.eps', 'epsc'); % Layout of the legend, file to write the plot to and format of the output file
-
-quickbar(3,
-	prebar(where(thread_timing_04, {'ct'}, {[200000000]}), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
-	'nb threads', % x values
-	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, % Values for y, one column per bar
-	'', % Data filter to apply before plotting (100 million jumps only)
-	{'seq' '1t' '2t' '3t' '4t' '5t' '6t' '7t' '8t'}, % Label to replace x values. Use direct numbers
-	'grouped', 0.5, % Style of the bars ('grouped' or 'stacked')
-	'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'200m iteration, 0.1 entropy ' 'thread 1 ' 'thread 2 ' 'thread 3 ' 'thread 4 ' 'thread 5 ' 'thread 6 ' 'thread 7 ' 'thread 8 '}, % Labels for curves of the previous graph and bars from this graph
-	'northeast', 'timing-200.eps', 'epsc'); % Layout of the legend, file to write the plot to and format of the output file
-
-% Separate graph for task gantt representation
-quickgantt(4, ... % fignum
-	cell, ... % data,
-	{[0 0 0] [0 0 0] [0 0 0] [0 0 0] [0 0 0] [0 0 0] [0 0 0] [0 0 0] [0 0 0]}, ... % colors
-	0.7, ... % thickness
-	{'swne' 'swne' 'swne' 'swne' 'swne' 'swne' 'swne' 'swne' 'swne'}, ... % hatch pattern,
-	{'-' '-' '-' '-' '-' '-' '-' '-' '-'}, ... % hatch line style
-	{[1 1 1] [1 1 1] [1 1 1] [1 1 1] [1 1 1] [1 1 1] [1 1 1] [1 1 1] [1 1 1]}, ... % hatch color
-	2, 1, ... % patterns, patternd
-	'MgOpenModernaBold.ttf', 8, ... % fontname, font size
-	800, 600, ... % x size, y size
-	'Time in milliseconds', 'Thread', ['Thread spawn and join accross time'], ... % x axis, y axis, grapht, 
-	{'Global' 'Thread 1' 'Thread 2' 'Thread 3' 'Thread 4' 'Thread 5' 'Thread 6' 'Thread 7' 'Thread 8'}, ... % graph legend, leglog,
-	['gantt.eps'], 'epsc2'); % outf, format
