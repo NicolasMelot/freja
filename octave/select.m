@@ -46,6 +46,8 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 %	b = select(a, ['col2' 'col4'])
 %	b = {
@@ -60,14 +62,19 @@
 %	      [1,2] =
 %		col2
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0)}
 %	}
 
 function out = select(table, cols, def)
 	cols_size = size(cols);
 	cols_size = cols_size(2);
 
+	check(table);
+
 	selected = {};
 	data = [];
+	alias={};
 	all = 0;
 
 	for i = 1:cols_size
@@ -76,6 +83,7 @@ function out = select(table, cols, def)
 			tsize = size(table{2});
 			tsize = tsize(2);
 			data = [data table{1}];
+			alias = {alias{:} table{3}{:}};
 			
 			for j = 1:tsize
 				col = table{2}{j};
@@ -96,6 +104,7 @@ function out = select(table, cols, def)
 			% Insert data
 			if index > 0 % The column exists
 				data = [data table{1}(:, index)];
+				alias = {alias{:} table{3}{index}};
 			else % The column doesn't exist. Filling with default value and create column name as requested
 				if prod(size(strfind(col, 'no_warning'))) == 0
 					warning(['Could not find column ''' col ''' in table. Filling with value ' int2str(def) '.']);
@@ -103,6 +112,7 @@ function out = select(table, cols, def)
 				colsize = size(table{1});
 				colsize = colsize(1);
 				data = [data ones(colsize, 1) .* def];
+				alias = { alias{:} {} };
 			end
 
 			% Add column name
@@ -118,8 +128,6 @@ function out = select(table, cols, def)
 
 	out{1} = data;
 	out{2} = selected;
+	out{3} = alias;
 end
-
-
-
 

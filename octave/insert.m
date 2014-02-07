@@ -44,6 +44,8 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 %	matrix = [
 %		7 7 8 2
@@ -66,11 +68,15 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
 function out = insert(table, matrix)
+	check(table);
 	out{1} = [table{1}; matrix];
 	out{2} = table{2};
+	out{3} = table{3};
 end
 
 

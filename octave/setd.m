@@ -44,6 +44,8 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 %	matrix = [
 %		7 7 8 2
@@ -60,9 +62,12 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
 function out = setd(table, matrix)
+	check(table);
 	sizem = size(matrix);
 	sizem = sizem(2);
 	sizec = size(table{2});
@@ -74,6 +79,7 @@ function out = setd(table, matrix)
 
 	out{1} = matrix;
 	out{2} = table{2};
+	out{3} = table{3};
 end
 
 

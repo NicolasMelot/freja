@@ -60,11 +60,12 @@
 %	grapht:	Title of the graph (string).
 %	graphl: Label of all curves or bars in the graph (cell of string).
 %	legloc: Legend location, for example :'northeast'; see help legend (string).
+%	box:	Surround the legend with a frame (boolean).	
 %	outf:	Filename to output the graph (string).
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickplot(fignum, table, colx, coly, filter, xval, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, outf, format)
+function quickplot(fignum, table, colx, coly, filter, xval, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
 
 data_x = cellfindstr(coln(table), colx);
 if data_x < 1
@@ -107,7 +108,11 @@ g_title = title(grapht);
 x_label = xlabel(x_axis);
 y_label = ylabel(y_axis);
 legend(graphl, 'location', legloc);
-legend('boxon');
+if box
+	legend('boxon');
+else
+	legend('boxoff');
+end
 
 set(x_label, 'fontname', fontn);
 set(x_label, 'fontsize', fonts);
@@ -129,6 +134,14 @@ if xval_size > 0
 		return
 	end
 	set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', xval);
+else
+	xval_size = prod(size(alias(table, {colx}){:}));
+	if xval_size > 0
+		if xval_size < maxi
+			error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' data-embedded labels.']);
+			return;
+		end
+	set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', alias(table, {colx}){:});
 end
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);

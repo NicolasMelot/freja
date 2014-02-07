@@ -44,6 +44,7 @@
 %	out:	The table after computation.
 
 function out = apply(table, col, func, aux)
+	check(table);
 	size_matrix = size(table{1});
 	size_y = size_matrix(1);
 
@@ -63,5 +64,6 @@ function out = apply(table, col, func, aux)
 
 	out{1} = matrix;
 	out{2} = table{2};
+	out{3} = table{3};
 end
 

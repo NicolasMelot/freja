@@ -59,6 +59,8 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 %	b = extend(a, {'col1'}, {'col2'}, 0)
 %	b = {
@@ -77,10 +79,12 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
 function out = extend(table, grp, cpy, value)
-
+check(table);
 % Compute inputs to older version signatures
 % Gets data into matrix
 matrix = table{1};
@@ -150,6 +154,7 @@ end
 
 out{1} = data;
 out{2} = coln;
+out{3} = table{3};
 
 end
 

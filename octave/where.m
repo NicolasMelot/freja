@@ -52,6 +52,8 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}	
 %	b = where(a, {'col2' 'col4'}, {[1 2] [4 8 7]})
 %	b = {
@@ -59,16 +61,18 @@
 %		1 1 3 4
 %		1 2 7 8
 %		1 2 7 7
-
 %
 %	      [1,2] =
 %		col1
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
 function out = where(table, cols, refs)
+	check(table);
 	matrix=table{1};
 	maxi=size(cols);
 	max=maxi(2);
@@ -95,4 +99,5 @@ function out = where(table, cols, refs)
 	end
 	out{1} = matrix;
 	out{2} = table{2};
+	out{3} = table{3};
 end

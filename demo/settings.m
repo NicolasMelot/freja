@@ -3,8 +3,10 @@ global plot_number = 4;
 
 %% Duplicate all default values as many times as necessary for each graph to get their own value
 function make_settings()
-	global default_hatches default_hatch_pattern default_hatch_colors default_hatch_thickness default_pattern_thickness default_pattern_space default_colors default_markers default_thickness default_marker_size default_font default_font_size default_width default_height default_output_format default_output_prefix default_output_extension default_legend_location;
-	global hatches hatch_pattern hatch_colors hatch_thickness pattern_thickness pattern_space colors markers thickness marker_size font font_size width height output_format output_prefix output_extension legend_location;
+	global default_hatches default_hatch_pattern default_hatch_colors default_hatch_thickness default_pattern_thickness default_pattern_space default_colors default_markers default_thickness default_marker_size default_font default_font_size default_width default_height default_output_format default_output_prefix default_output_extension default_legend_location
+	global default_legend_box
+	global hatches hatch_pattern hatch_colors hatch_thickness pattern_thickness pattern_space colors markers thickness marker_size font font_size width height output_format output_prefix output_extension legend_location
+	global legend_box
 	global plot_number;
 
 	hatches = repmat({default_hatches}, [plot_number 1]);
@@ -23,6 +25,7 @@ function make_settings()
 	width = repmat({default_width}, [plot_number 1]);
 	height = repmat({default_height}, [plot_number 1]);
 	legend_location = repmat({default_legend_location}, [plot_number 1]);
+	legend_box = repmat({default_legend_box}, [plot_number 1]);
 
 	output_format = repmat({default_output_format}, [plot_number 1]);
 	output_prefix = repmat({default_output_prefix}, [plot_number 1]);
@@ -48,10 +51,11 @@ global default_font_size = 8;
 global default_width = 800;
 global default_height = 400;
 
-global default_output_format='epsc';
-global default_output_prefix='';
-global default_output_extension='eps';
-global default_legend_location='northeast';
+global default_output_format = 'epsc';
+global default_output_prefix = '';
+global default_output_extension = 'eps';
+global default_legend_location = 'northeast';
+global default_legend_box = 0;
 
 %% Declaration for default graph-specific parameters
 global hatches;
@@ -74,6 +78,7 @@ global output_format;
 global output_prefix;
 global output_extension;
 global legend_location;
+global legend_box;
 
 %% Generate settings for each plot to be generated
 make_settings

@@ -50,6 +50,8 @@
 %		col2
 %		col3
 %		col4
+%
+%             [1,3] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
 %	}
 %	b = prebar(a, 'col1', 'col2', 0)
 %	b = {
@@ -68,9 +70,12 @@
 %		col2_3
 %		col3
 %		col4
+%
+%             [1,3] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {'zero' 'un' 'deux' trois'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
 %	}
 
 function out = prebar(table, colx, coly, def)
+	check(table);
 	% Additional columns needed in the process
 	column_size = 'no_warning_group_size'; % If you modify this value, don't forget to modify also the one used in function reset_line below
 	line_id = 'no_warning_line_id';
@@ -100,10 +105,12 @@ function out = prebar(table, colx, coly, def)
 	% Clone coly column as much as needed
 	for i = 2:lines_per_group
 		data_y = data(out, {coly}, 0);
-		names = coln(out);
+		alias_y = alias(out, {coly});
 		data_all = data(out, {''}, 0);
+		alias_all = alias(out, {''});
+		names = coln(out);
 		data_y = circshift(data_y, -i + 1);
-		out = { [data_all data_y] { names{:} request_name(names, coly) } };
+		out = { [data_all data_y] { names{:} request_name(names, coly) } { alias_all{:} alias_y{:} } };
 	end
 
 	% Final: get rid of all lines becoming useless
