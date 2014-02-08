@@ -28,11 +28,13 @@
 %	fignum:	Figure number. A figure of the same number as one or several
 %		previously draw ones is draw on the same canvas and produces
 %		an output that integrate these previous figures (scalar).
-%	data:	Cell containing matrices in which one line or column represents
-%		discontinuous lines to be shown. Each line is a vector whose
-%		paire of values represent the x point where a segment starts and
-%		stop. Each vector must be of length 2*n or the last value is ignored
-%		(cell of matrices or cell of vectors)
+%	table:	Table containing the date to be plot in a gantt diagram
+%	actor:	Column containing values for all actors in the Gantt chart (string).
+%	start:	Column where line start values are stored. If there are several
+%		lines for the same actor value, then as many lines are drawn for
+%		the same actor (string). 
+%	stop:	Column where line stop values are stored. The observation from the
+%		start parameter (above) is also valid (string).
 %	colors:	Colors of the lines to draw. Each color is represented by either
 %		a string ('red', 'blue') or an RGB vector (cell of string and/or
 %		vectors).
@@ -52,15 +54,13 @@
 %	fonts:	Font size of legend, title and axes label (scalar)
 %	x_size:	Length of the canvas in pixels, along the x axis (scalar).
 %	y_size:	Height of the canvas in pixels, along the y axis (scalar).
-%	x_axis:	Label for x axis (string).
 %	y_axis:	Label for y axis (string).
 %	grapht:	Title of the graph (string).
-%	graphl: Label of all curves or bars in the graph (cell of strings).
 %	outf:	Filename to output the graph (string).
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickgantt(fignum, data, colors, thickn, ptrn, ptrnst, ptrnc, ptrns, ptrnd, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, outf, format)
+function quickgantt(fignum, table, actor, start, stop, colors, thickn, ptrn, ptrnst, ptrnc, ptrns, ptrnd, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, outf, format)
 ptrnd = ptrnd * 5;
 figure(fignum);
 hold on;
@@ -68,13 +68,24 @@ hold on;
 xmin = 0;
 xmax = 0;
 
+cell={};
+actor_val = alias(table, {actor}){:};
+actor_val_size = size(actor_val);
+actor_val_size = actor_val_size(2);
+
+for i = 1:actor_val_size
+	cell{i} = data(where(table, [ actor ' == ' actor '::' actor_val{i} ]), {start stop}, 0);
+end
+graphl = alias(table, {actor}){:};
+
 % Disable window popups when generating a new graph
 set (0, 'defaultfigurevisible', 'off');
 
-num_diagram = size(data)(2);
+num_diagram = size(cell);
+num_diagram = num_diagram(2);
 ylim([0 num_diagram + 1]);
 for i=1:num_diagram
-	xx = data{i}(1, :);
+	xx = cell{i}(1, :);
 	size_xx = size(xx)(2) / 2;
 
 	for j=1:size_xx 
