@@ -59,6 +59,7 @@
 %	}
 
 function out = setc(table, coln)
+	check(table);
 	sizem = size(table{1});
 	sizem = sizem(2);
 	sizec = size(coln);
@@ -70,6 +71,7 @@ function out = setc(table, coln)
 
 	out{1} = table{1};
 	out{2} = coln;
+	out{3} = table{3};
 end
 
 

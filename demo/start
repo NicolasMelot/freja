@@ -78,9 +78,11 @@ get_date_filename()
 build_args()
 {
 	# $1 is the variable containing the list of variables to be listed
+	local myvars=
+	local next_step=
 	eval myvars=\(`echo $@`\)
 	eval next_step=`cut_head ${myvars[@]}`
-	var=${myvars[0]}
+	local var=${myvars[0]}
 
 	for val in `eval echo \$\{$var\[\@\]\}`
 	do
@@ -98,19 +100,20 @@ build_args()
 
 count_args()
 {
-	count=1
+	local arg_count=1
+	local myvars=
 	eval myvars=\(`echo $@`\)
 
 	for var in ${myvars[@]};
 	do
-		count=$(($count * $(echo $(eval echo \$\{$var\[\@\]\})|wc -w)))
+		arg_count=$(($arg_count * $(echo $(eval echo \$\{$var\[\@\]\})|wc -w)))
 	done
-	echo $count
+	echo $arg_count
 }
 
 merge_dir()
 {
-	output_file="$1"
+	local output_file="$1"
 	shift
 
 	info Merging all results to $output_file
@@ -119,7 +122,7 @@ merge_dir()
 	echo -e $DATA_BEGIN > $output_file
 	while [ "$#" != "0" ]
 	do
-		input_dir=$1
+		local input_dir=$1
 
 		## Process this argument only if it is a directory
 		if [ -d $input_dir ]
@@ -141,7 +144,7 @@ merge_dir()
 	echo -e $ALIAS_BEGIN >> $output_file
 	local variable="${compile[@]} ${run[@]} $output_columns"
 	eval variable=\($variable\)
-	variable_size=${#variable[@]}
+	local variable_size=${#variable[@]}
 
 	seq 0 $(($variable_size - 1)) | tr ' ' \\\n | while read i
 	do
@@ -183,18 +186,18 @@ merge_dir()
 
 compile()
 {
-	total_instances=`count_args ${compile[@]}`
+	local total_instances=`count_args ${compile[@]}`
 	info Will compile $total_instances settings
 
-	compile_counter=1
+	local compile_counter=1
 
 	# Success
-	compile_success=0
+	local compile_success=0
 
 	# Timing
-	total_time=0
+	local total_time=0
 
-	start_time=`date +%s`
+	local start_time=`date +%s`
 	build_args ${compile[@]}|while read args; do
 		info_start Setting $compile_counter/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 		instance_start=`date +%s`
@@ -222,15 +225,15 @@ compile()
 		compile_counter=$(($compile_counter + 1))
 	done
 
-	compile_success=${PIPESTATUS[1]}
+	local compile_success=${PIPESTATUS[1]}
 	if [ "x$compile_success" == "x0" ]; then
-		compile_outcome="Success"
+		local compile_outcome="Success"
 	else
-		compile_outcome="Failed"
+		local compile_outcome="Failed"
 	fi
 	
-	stop_time=`date +%s`
-	overall_time=$(($stop_time - start_time))
+	local stop_time=`date +%s`
+	local overall_time=$(($stop_time - start_time))
 
 	info $compile_outcome. Compilation took $overall_time seconds \($(($overall_time / 60)) minutes\) or $(($overall_time / $total_instances)) seconds per compilation setting \($(($overall_time / $total_instances / 60)) minutes\).
 
@@ -239,47 +242,47 @@ compile()
 
 batch()
 {
-	run_instances=`count_args ${run[@]}`
-	compile_instances=`count_args ${compile[@]}`
-	total_instances=$(($run_instances * $compile_instances))
+	local run_instances=`count_args ${run[@]}`
+	local compile_instances=`count_args ${compile[@]}`
+	local total_instances=$(($run_instances * $compile_instances))
 
 	info Will run $total_instances instances
 
 	# Initialize output file
-	start_time=`date +%s`
-	output_dir=$experiment/$output_dir_current
+	local start_time=`date +%s`
+	local output_dir=$experiment/$output_dir_current
 
 	mkdir -p $output_dir
 
-	batch_success=0
-	compile_counter=0
-	batch_time=0
-	skipped=0
+	local batch_success=0
+	local compile_counter=0
+	local batch_time=0
+	local skipped=0
 
 	while read flags
 	do
-		run_counter=1
-		run_success=0
-		flags_index=`index_seq compile $flags`
+		local run_counter=1
+		local run_success=0
+		local flags_index=`index_seq compile $flags`
 
 		while read args
 		do
-			instance_number=$((compile_counter * $run_instances + $run_counter))
+			local instance_number=$((compile_counter * $run_instances + $run_counter))
 			info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
-			instance_start=`date +%s`
-			args_index=`index_seq run $args`
+			local instance_start=`date +%s`
+			local args_index=`index_seq run $args`
 
-			basename=${output_base}_${instance_number}
+			local basename=${output_base}_${instance_number}
 
 			## Only run this experiment if there is no output for this one
 			if [ -f $output_dir/${basename}_$output_success ]
 			then
-				outcome="Skipped"
-				skipped=$(($skipped + 1))
+				local outcome="Skipped"
+				local skipped=$(($skipped + 1))
 			else
 				bash ./run $flags $args | while read line;
 				do
-					content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`
+					local content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`
 					if [ "x`echo $content|grep ^%`" == "x" ]; then
 						echo $flags_index $args_index $content >> $output_dir/${basename}_$output_progress
 					else
@@ -287,15 +290,15 @@ batch()
 					fi
 				done
 
-				success=${PIPESTATUS[0]}
+				local success=${PIPESTATUS[0]}
 				if [ "x$success" == "x0" ]; then
-					outcome="OK"
+					local outcome="OK"
 					mv $output_dir/${basename}_$output_progress $output_dir/${basename}_$output_success
 				else
-					outcome="Failed"
+					local outcome="Failed"
 					## Annotate output as failed
 					## Create a numeric suffix in case of successive failures
-					num=`ls $output_dir/${basename}_${output_failure}* 2> /dev/null | wc -l`
+					local num=`ls $output_dir/${basename}_${output_failure}* 2> /dev/null | wc -l`
 					if [ "$num" == "0" ]
 					then
 						num=""
@@ -314,40 +317,40 @@ batch()
 				fi
 			fi
 
-			instance_stop=`date +%s`
+			local instance_stop=`date +%s`
 
 			## Evaluate how much time is left before completion based on average time to run previous experiments, not taking into account the ones skipped
-			run_time=$(($instance_stop - $instance_start))
+			local run_time=$(($instance_stop - $instance_start))
 			total_run=$(($instance_number - $skipped))
 			if [ "$total_run" == "0" ]
 			then
 				total_run=1
 			fi
-			batch_time=$(perl -e "printf(\"%.2f\", $(echo "($batch_time + $run_time)"))")
-			remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $instance_number) * ($batch_time / $total_run))"))")
+			local batch_time=$(perl -e "printf(\"%.2f\", $(echo "($batch_time + $run_time)"))")
+			local remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $instance_number) * ($batch_time / $total_run))"))")
 			info_stop $outcome. $run_time sec finished on $(echo -n `get_date`)\; approx. $remaining sec left \($(perl -e "printf(\"%.2f\", $(echo "($remaining / 60)"))") minutes\)
 
 			run_counter=$(($run_counter + 1))
 		done < <(build_args ${run[@]})
 
 		if [ "x$run_success" == "x0" ]; then
-			outcome="OK"
+			local outcome="OK"
 		else
-			outcome="Failed"
-			batch_success=1
+			local outcome="Failed"
+			local batch_success=1
 		fi
 
-		compile_counter=$(($compile_counter + 1))
+		local compile_counter=$(($compile_counter + 1))
 	done < <(build_args ${compile[@]})
 
 	if [ "x$batch_success" == "x0" ]; then
-		batch_outcome="Success"
+		local batch_outcome="Success"
 	else
-		batch_outcome="Failed"
+		local batch_outcome="Failed"
 	fi
 
-	stop_time=`date +%s`
-	overall_time=$(($stop_time - start_time))
+	local stop_time=`date +%s`
+	local overall_time=$(($stop_time - start_time))
 
 	info $batch_outcome. Batch took $overall_time seconds \($(($overall_time / 60)) minutes\) to run, or $(($overall_time / $total_instances)) seconds per instance run \($(($overall_time / $total_instances / 60)) minutes\).
 

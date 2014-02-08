@@ -71,7 +71,7 @@ figure(fignum);
 % Data filtering
 filtering = strtrim(filter);
 if strcmp(filtering, '') == 0
-	filtering=['where(table, ' filtering ');'];
+	filtering=['where(table, ''' filtering ''');'];
 else
 	filtering='table;';
 end
@@ -100,13 +100,15 @@ table = {matrix, {colx, 'coly'} {alias(table, {colx coly{1}}){:}}};
 coly='coly';
 
 x = data(groupby(select(table, {colx}, 0), {colx}, {}, {}), {colx}, 0);
-current_x_data = where(table, {colx}, {[x(1)]});
+%current_x_data = where(table, {colx}, {[x(1)]});
+current_x_data = where(table, [ colx ' == ' int2str(x(1)) ]);
 y = data(current_x_data, {coly}, 0);
 
 maxi = size(x);
 maxi = maxi(1);
 for i = 2:maxi
-	current_x_data = where(table, {colx}, {[x(i)]});
+%	current_x_data = where(table, {colx}, {[x(i)]});
+	current_x_data = where(table, [ colx ' == ' int2str(x(i)) ]);
 	y = [y data(current_x_data, {coly}, 0)];
 end
 

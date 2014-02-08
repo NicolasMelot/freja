@@ -106,7 +106,7 @@ for i = 1:maxi
 	% Data filtering
 	filtering = strtrim(filter{i});
 	if strcmp(filtering, '') == 0
-		filtering=['where(table, ' filtering ')'];
+		filtering=['where(table, ''' filtering ''')'];
 	else
 		filtering='table';
 	end

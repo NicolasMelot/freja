@@ -40,9 +40,14 @@ index()
 	local content=
 	eval content=\('$'$variable\)
 
+	## Check if there is an alias for this variable
+	local alias_var=alias_$variable
+	eval alias_var=\('$'$alias_var\)
+
 	local size=${#content[@]}
 
-	if ! is_number_seq ${content[@]}
+	## If the variable is not a numeric sequence or if an alias was given	
+	if ! is_number_seq ${content[@]} || (( ${#alias_var[@]} != 0 ))
 	then
 		for i in `seq 0 $(($size - 1))`
 		do

@@ -18,7 +18,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Never use these names for run or compile features
+# Variable and alias name format:
+# Forbidden character: !=<>:&|() (may be more characters raising issues. Stick to a-zA-Z0-9 _~
+# Special characters: ~^{}  ~ is replaced by _ and are interpreted for exposants and indices as latex does.
+#	Note: You *MUST* use them in the processing and plotting scripts to address these columns and aliases
+# Must not begin with a digit 0-9 or a point '.'.
+
+# Never use these names for run or compile features (please report other problematic names)
 # count
 
 ## Compile-time settings
@@ -27,14 +33,14 @@ entropy="0.4"				# Randomness in the calculation time
 nb_threads="seq. over. `seq 2 8`"
 
 ## Run-time settings
-run=(ct try)
-ct="100000000 200000000"		# amount of data to be written to main memory
+run=(count try)
+count="100000000 200000000"		# amount of data to be written to main memory
 try=`seq 1 10`				# Number of different run per setting
 
 ## Run-time data
 output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec"
 
 ## Aliases for settings or columns (matching index value starting at 0)
-alias_ct="100_millions 200_millions"
+alias_count="100_millions 200_millions"
 alias_thread="SEQ Thread_1 Thread_2 Thread_3 Thread_4 Thread_5 Thread_6 Thread_7 Thread_8"
 alias_try="1 2 3 4 5 6 7 8 9 10"

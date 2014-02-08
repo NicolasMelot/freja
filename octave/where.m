@@ -20,31 +20,32 @@
 %
 %	Function where
 %
-%	Filters the input matrix to keep only the rows fulfilling some equality
-%	requirement. When selecting rows, the function allows the expression of
-%	conjunctions (a column col1 must fulfill condition cond1 AND a column
-%	col2 different to col1 must fulfil condition cond2) as well as
-%	disjunctions (a column col1 must take the value v1 OR the value v2).
+%	Filters the input matrix to keep only the rows fulfilling some arbitrary
+%	logical expression.
 %	
 %	
 %	Parameters:
 %	table:	The matrix to be filtered (table)
-%	cols:	Indexes of columns to be checked (cell of strings).
-%	refs:	The possible value each column can take. The cell containts
-%		exactly as much vectors as there as elements in cols. Each
-%		element is a vector containing every value the corresponding
-%		column can take (cell of vectors).
+%	cond:	Condition lines in data must meet to be selected as output (string).
+%		It must be written in octave/matlab logic operations format
+%		(operators, parenthesis). Column names strings (including special
+%		characters ._{}^ and space ' ') are replaced by their corresponding
+%		index in the table to perform the actual logic check. Similarly,
+%		value aliases defined for columns denoting a non-numeric value,
+%		possibly through an explicit alias declaration, can be resolved
+%		from their column and alias name column::alias (including
+%		special characters as defined above).
 %	out:	The input matrix without any row which at least one inspected
 %		column does not fulfil its requirements (matrix).
 %
 %	Example:
 %	a = {
 %	      [1,1] =
-%		1 1 3 4
+%		1 1 3 5
 %		1 2 7 8
 %		1 1 5 6
 %		2 3 3 9
-%		2 3 5 5
+%		2 3 5 4
 %		1 2 7 7
 %
 %	      [1,2] =
@@ -53,12 +54,12 @@
 %		col3
 %		col4
 %
-%             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
+%             [1,3] = {{}(0x0) {'zero' 'one' 'two'} {}(0x0) {}(0x0)}
 %	}	
-%	b = where(a, {'col2' 'col4'}, {[1 2] [4 8 7]})
+%	b = where(a, '(col2 == col2::one | col2 == col2::two) & col4 <= 8 & col4 >= 5')
 %	b = {
 %	      [1,1] =
-%		1 1 3 4
+%		1 1 3 5
 %		1 2 7 8
 %		1 2 7 7
 %
@@ -71,33 +72,69 @@
 %             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
-function out = where(table, cols, refs)
-	check(table);
-	matrix=table{1};
-	maxi=size(cols);
-	max=maxi(2);
+function out = where(table, cond)
+	%% Happens in three parts:
+	%% * Resolve aliases (format foo::bar) into their constant equivalent and replace them in the condition string
+	%% * Resolve variables (non-numeric strings) into its column index and replace them in the condition string
+	%% * Filter all matrix lines and keep lines if the recomposed condition is satisfied with this line
 
-	for i = 1:max
-		col = cellfindstr(table{2}, cols{i});
-		ref = refs{1, i};
+	%% Part 1: find and replace all aliases with their value
+	%% Find all occurrence of the form (simplified) bla bla bla::hello or bla bla bla::45 
+	aliases = regexp(cond, '([\w_{}^.]|[\w_{}^.][\w\d_{}^.]|[\w_{}^.][ \w\d_{}^.]+[\w\d_{}^.])::([\w\d_{}^.]|[\w\d_{}^.][\w\d_{}^.]|[\w\d_{}^.][ \w\d_{}^.]+[\w\d_{}^.])\s*([()&|<>=!+-/*]|$)', 'match');
 
-		% Fire an error meesage if a column could not be found
-		if col < 1
-			error(['[where][error] Could not find column ''' cols{i} '''.']);
-			return
+	%% Resolve the value for each alias
+	alias_size = size(aliases);
+	alias_size = alias_size(2);
+	for i = 1:alias_size
+		%% Remove any potential trailing arithmetic sign and remove surrounding spaces
+		match = aliases{i};
+		match = regexp(match, '([^+*/><!=|&-]+)[+*/>|<!&=-]?', 'tokens'){:}{1};
+		match = strtrim(match);
+
+		%% Extract column and symbol names
+		components = regexp(match, '([^:]+)::(.+)', 'tokens'){1};
+		column = components{1};
+		symbol = components{2};
+
+		%% Extract the symbol value and check if it could be found
+		value = cellfindstr(alias(table, {column}){1}, symbol);
+		if value == 0
+			error(['Cannot resolve symbol ''' match '''.']);
 		end
-	
-		cond = matrix(:, col) == ref(1, 1);
-	    
-		maxj = size(ref);
-		maxj = maxj(2);
-		for j = 2:maxj
-			cond = cond | matrix(:, col) == ref(1, j);
-		end
-	
-		matrix = matrix(find(cond), :);
+		value = value - 1;
+
+		cond = strrep(cond, match, int2str(value));
 	end
-	out{1} = matrix;
+
+	%% Part 2: Resolve line index for each variable
+	variables = regexp(cond, '([a-zA-Z_{}]|[a-zA-Z_{}][0-9a-zA-Z_{}.^]|[a-zA-Z_{}][0-9 a-zA-Z_{}.^]+[0-9a-zA-Z_{}.^])\s*([()&|<>=!+-/*]|$)', 'match');
+
+	%% Resolve the value for each variable
+	variable_size = size(variables);
+	variable_size = variable_size(2);
+	for i = 1:variable_size
+		%% Remove any potential trailing arithmetic sign and remove surrounding spaces
+		match = variables{i};
+		match = regexp(match, '([^+*/><!=-]+)[+*/><!=-]?', 'tokens'){:}{1};
+		match = strtrim(match);
+
+		%% Extract the symbol value and check if it could be found
+		index = cellfindstr(coln(table), match);
+		if index == 0
+			error(['Cannot resolve column ''' match '''.']);
+		end
+
+		cond = strrep(cond, match, ['table{1}(:, ' int2str(index) ')']);
+	end
+
+	%% Produce a truth table from the condition synthetized in step 2
+	truth = eval(cond);
+
+	%% Use the truth table to address the matrix
+	out{1} = table{1}(find(truth), :);
+
+	%% Return column names and value aliases as they came
 	out{2} = table{2};
 	out{3} = table{3};
 end
+

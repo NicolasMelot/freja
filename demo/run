@@ -23,9 +23,9 @@ entropy=$1
 nb_threads=$2
 
 # run settings
-ct=$3
+count=$3
 try=$4
 
-./program-$entropy-$nb_threads $ct
+./program-$entropy-$nb_threads $count
 
 exit $?
