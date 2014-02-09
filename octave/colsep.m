@@ -18,10 +18,10 @@
 %
 % =========================================================================
 %
-%	Function prebar
+%	Function colsep
 %
 %	Prepares a table to be plotted using quickbar, where values for bars
-%	are not held in different columns but all in one column, where several
+%	are not held in different columns but all in one column and several
 %	values are available for each x (such as the thread runtime). Creates
 %	additional columns for each value in a given x, move data there and
 %	name that column after the name of the input column, append with an
@@ -53,7 +53,7 @@
 %
 %             [1,3] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
 %	}
-%	b = prebar(a, 'col1', 'col2', 0)
+%	b = separate(a, 'col1', 'col2', 0)
 %	b = {
 %	      [1,1] =
 %		1 1 0 0 3 4
@@ -74,7 +74,7 @@
 %             [1,3] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {'zero' 'un' 'deux' trois'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
 %	}
 
-function out = prebar(table, colx, coly, def)
+function out = colsep(table, colx, coly, def)
 	check(table);
 	% Additional columns needed in the process
 	column_size = 'no_warning_group_size'; % If you modify this value, don't forget to modify also the one used in function reset_line below

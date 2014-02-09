@@ -25,11 +25,12 @@
 %	
 %	
 %	Parameters:
-%	table:	The table to be filtered (table)
-%	cols:	Column aliases to be extracted. An empty string denotes all columns.
-%		A column selected twice or more duplicates the aliases collection
+%	table:	The table from where to read aliases (table).
+%	cols:	Column from where to extract alises. An empty string denotes
+%		all columns. A column selected twice or more duplicates the
+%		aliases collection (cell of strings).
 %		to be returned (list of strings).
-%	out:	The input matrix without any column not listed in cols (table)
+%	out:	All aliases ordered as cols parameter (cell of cells of strings).
 %
 %	Example:
 %	a = {

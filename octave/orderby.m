@@ -18,7 +18,7 @@
 %
 % =========================================================================
 %
-%	Function tablesort
+%	Function orderby
 %
 %	Sorts the table content along columns in order of priority given
 %	by the ordered sequence of column names given as parameter.
@@ -69,7 +69,7 @@
 %             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
-function out = tablesort(table, cols)
+function out = orderby(table, cols)
 	check(table);
 	matrix = data(table, {''}, 0);
 

@@ -67,6 +67,9 @@
 
 function quickplot(fignum, table, colx, coly, filter, xval, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
 
+check(table);
+table = orderby(table, {colx});
+
 data_x = cellfindstr(coln(table), colx);
 if data_x < 1
 	error(['Could not find column ''' colx ''' in table.']);

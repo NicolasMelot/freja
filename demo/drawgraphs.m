@@ -83,6 +83,7 @@ max_ct = max(data(select(table, {'count'}, 0), {'count'}, 0)); % Get maximum jum
 gantt = where(table, ['nb threads == ' int2str(max_threads) ' & count == ' int2str(max_ct)]); % Actually select data for max amount of thread and jump count
 
 gantt = duplicate(gantt, {'nb threads' 'nb threads'}, {'thread start' 'thread stop'}, -1); % Create new columns for start and stop values
+gantt = setalias(gantt, {'thread start' 'thread stop'}, {{} {}}); % Make sure the two new columns copied from column thread do not get aliases that make no sens to them
 gantt = apply(gantt, {'thread start' 'thread stop'}, {@thread_start, @thread_stop}, 0); % Apply conversion functions
 
 gantt = select(gantt, {'entropy', 'try', 'thread', 'thread start' 'thread stop'}, 0); % eliminate nb threads and count columns
@@ -90,15 +91,18 @@ gantt = select(gantt, {'entropy', 'try', 'thread', 'thread start' 'thread stop'}
 globals = groupby(gantt, {'try'}, {'entropy', 'thread', 'thread start', 'thread stop'}, {@mean, @mean, @min, @max}); % Isolate data gather per try number and apply a mean to every other columns. We only care about try columns and global time values here. The rest is '@mean'ed' but we won't keep it. 
 globals = apply(globals, {'thread' 'thread start' 'thread stop'}, {@set_thread_zero, @cp_start, @cp_stop}, 0); % Reset thread number to 0 (to denote global time) and copy columns for global timing to thread columns
 
-gantt = insert(gantt, data(globals, {'entropy', 'try', 'thread', 'thread start', 'thread stop'}, 0)); % Insert this new data to the table. Lines of thread = 0 now denote global time.
+gantt = insert(where(gantt, 'thread != thread::SEQ'), data(globals, {'entropy', 'try', 'thread', 'thread start', 'thread stop'}, 0)); % Insert this new data to the table. Lines of thread = 0 now denote global time.
 
 % Compute thread (and global) start and stop time
 gantt = groupby(gantt, {'thread'}, {'thread start' 'thread stop'}, {@mean, @mean}); % Group by thread number and reduce groups using mean function
 thread = alias(gantt, {'thread'}){:};
 thread_size = size(thread);
 thread_size = thread_size(2);
-thread = {{'Global' thread{2:thread_size}}};
-setalias(gantt, {'thread'}, thread);
+
+%% Rename 'SEQ' to 'Global'
+thread = {'Global' thread{2:thread_size}};
+%thread = {thread{2:thread_size} 'Global'};
+gantt = setalias(gantt, {'thread'}, {thread});
 
 % Third part: use plotting function to generate graphs, format and store them in graphic files.
 % /!\ Matlab requires three points ( ... ) at the end of lines to support line breaks in the middle of functions.
@@ -107,7 +111,7 @@ quickplot(num,
 	global_timing_04, % Table to take data from
 	'nb threads', % Column for x values
 	{'global time', 'global time'}, % Columns for y values
-	{'count == count::100 millions' 'count == count::200 millions'}, % Filters for columns mentioned earlier.
+	{'count == count::10^{8}' 'count == count::2 10^8'}, % Filters for columns mentioned earlier.
 	{}, % Label to replace x values. Use raw values
 	colors{num}, % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, % Enough markers for 6 curves. Browse the web to find more.
@@ -123,17 +127,18 @@ quickerrorbar(num,
 	'nb threads', % Column for x
 	{'global time'}, % Columns for y (one curve per column)
 	{'global stddev'}, % Columns for standard deviation
-	{'count == count::100 millions'}, % Filters for each curve to be plotted (100 million jumps only)
+	{'count == count::10^{8}'}, % Filters for each curve to be plotted (100 million jumps only)
 	{}, % Label to replace x values. Use raw values
 	colors{num}, % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, % Enough markers for 6 curves. Browse the web to find more.
 	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, % Markers size, curves' thickness, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.1 entropy '}, % Labels for curves
+	{'100m iteration, 0.4 entropy '}, % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-100' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
+%% This graph is combined with the preivous graph, it keeps the same number
 quickbar(num,
-	prebar(where(thread_timing_04, 'count == count::100 millions'), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
+	colsep(where(thread_timing_04, 'count == count::10^{8}'), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
 	'nb threads', % x values
 	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, % Values for y, one column per bar
 	'', % Data filter to apply before plotting (100 million jumps only)
@@ -141,8 +146,12 @@ quickbar(num,
 	'grouped', 0.5, % Style of the bars ('grouped' or 'stacked')
 	'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.1 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, % Labels for curves of the previous graph and bars from this graph
+	{'100m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, % Labels for curves of the previous graph and bars from this graph
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-100' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
+
+%% Now we want seq. to be at the end of the plot
+global_timing_04 = shuffle(global_timing_04, {'nb threads'}, {{'2' '3' '4' '5' '6' '7' '8' 'over.' 'seq.'}});
+thread_timing_04 = shuffle(thread_timing_04, {'nb threads'}, {{'2' '3' '4' '5' '6' '7' '8' 'over.' 'seq.'}});
 
 % The two following graphs are combined together
 num = 3;
@@ -151,17 +160,17 @@ quickerrorbar(3,
 	'nb threads', % Column for x
 	{'global time'}, % Columns for y (one curve per column)
 	{'global stddev'}, % Columns for standard deviation
-	{'count == count::200 millions'}, % Filters for each curve to be plotted (100 million jumps only)
+	{'count == count::2 10^8'}, % Filters for each curve to be plotted (100 million jumps only)
 	{}, % Label to replace x values. Use raw values
 	colors{num}, % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, % Enough markers for 6 curves. Browse the web to find more.
 	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, % Markers size, curves' thickness, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.1 entropy '}, % Labels for curves
+	{'100m iteration, 0.4 entropy '}, % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 quickbar(num,
-	prebar(where(thread_timing_04, 'count == count::200 millions'), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
+	colsep(where(thread_timing_04, 'count == count::2 10^8'), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
 	'nb threads', % x values
 	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, % Values for y, one column per bar
 	'', % Data filter to apply before plotting (100 million jumps only)
@@ -169,16 +178,19 @@ quickbar(num,
 	'grouped', 0.5, % Style of the bars ('grouped' or 'stacked')
 	'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'200m iteration, 0.1 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, % Labels for curves of the previous graph and bars from this graph
-	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
+	{'200m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, % Labels for curves of the previous graph and bars from this graph
+	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200-2' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % Separate graph for task gantt representation
+%% We want the global line to be at the top
+gantt = shuffle(gantt, {'thread'}, {{'Thread 1' 'Thread 2' 'Thread 3' 'Thread 4' 'Thread 5' 'Thread 6' 'Thread 7' 'Thread 8' 'Global'}});
+
 num=4;
 quickgantt(num, ... % figure number id
-	gantt, ... % data to be plot
+	colmerge(gantt, 'thread', {{'thread start'} {'thread stop'}}, {'start' 'stop'}), ... % data to be plot; this is useless as each column created takes only one source
 	'thread', ... % Gantt actors
-	'thread start', ... % Start values for lines for each actor
-	'thread stop', ... % Stop values for lines for each actor
+	'start', ... % Start values for lines for each actor
+	'stop', ... % Stop values for lines for each actor
 	colors{num}, ... % colors
 	hatch_thickness{num}, ... % thickness
 	hatch_pattern{num}, ... % hatch pattern,

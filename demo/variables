@@ -19,10 +19,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Variable and alias name format:
-# Forbidden character: !=<>:&|() (may be more characters raising issues. Stick to a-zA-Z0-9 _~
+# Forbidden character: !=<>:&|()+-*/ (may be more characters raising issues. Stick to a-zA-Z0-9_~{}^ and ' '
 # Special characters: ~^{}  ~ is replaced by _ and are interpreted for exposants and indices as latex does.
 #	Note: You *MUST* use them in the processing and plotting scripts to address these columns and aliases
-# Must not begin with a digit 0-9 or a point '.'.
+# Must not begin with a digit 0-9 or a point '.' and must not start or finish with a space ' '.
 
 # Never use these names for run or compile features (please report other problematic names)
 # count
@@ -41,6 +41,6 @@ try=`seq 1 10`				# Number of different run per setting
 output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec"
 
 ## Aliases for settings or columns (matching index value starting at 0)
-alias_count="100_millions 200_millions"
+alias_count="10^{8} 2_10^8"
 alias_thread="SEQ Thread_1 Thread_2 Thread_3 Thread_4 Thread_5 Thread_6 Thread_7 Thread_8"
 alias_try="1 2 3 4 5 6 7 8 9 10"

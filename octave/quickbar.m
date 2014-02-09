@@ -59,6 +59,8 @@
 %		(string).
 
 function quickbar(fignum, table, colx, coly, filter, xval, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
+check(table);
+table = orderby(table, {colx});
 
 data_x = cellfindstr(coln(table), colx);
 if data_x < 1

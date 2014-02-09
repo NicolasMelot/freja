@@ -24,9 +24,9 @@
 %	
 %	
 %	Parameters:
-%	table:	The matrix to which (table).
-%	coln:	New names to give to columns
-%	out:	The table from merged data (table)
+%	table:	The table where to store the data (table).
+%	coln:	New names to give to columns (cell of strings).
+%	out:	The table from merged data (table).
 %
 %	Example:
 %	a = {
