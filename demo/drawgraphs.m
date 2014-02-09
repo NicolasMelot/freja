@@ -107,46 +107,46 @@ gantt = setalias(gantt, {'thread'}, {thread});
 % Third part: use plotting function to generate graphs, format and store them in graphic files.
 % /!\ Matlab requires three points ( ... ) at the end of lines to support line breaks in the middle of functions.
 num = 1;
-quickplot(num,
-	global_timing_04, % Table to take data from
-	'nb threads', % Column for x values
-	{'global time', 'global time'}, % Columns for y values
-	{'count == count::10^{8}' 'count == count::2 10^8'}, % Filters for columns mentioned earlier.
-	{}, % Label to replace x values. Use raw values
-	colors{num}, % Colors to be applied to the curves, written in RGB vector format
-	markers{num}, % Enough markers for 6 curves. Browse the web to find more.
-	thickness{num}, marker_size{num}, font{num}, font_size{num}, width{num}, height{num}, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Global time to perform 100 and 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.4 entropy ' '200m iteration, 0.4 entropy '}, % Labels for curves
+quickplot(num, ...
+	global_timing_04, ... % Table to take data from
+	'nb threads', ... % Column for x values
+	{'global time', 'global time'}, ... % Columns for y values
+	{'count == count::10^{8}' 'count == count::2 10^8'}, ... % Filters for columns mentioned earlier.
+	{}, ... % Label to replace x values. Use raw values
+	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
+	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
+	thickness{num}, marker_size{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
+	'Number of threads', 'Time in milliseconds', 'Global time to perform 100 and 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	{'100m iteration, 0.4 entropy ' '200m iteration, 0.4 entropy '}, ... % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-error' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % The two following graphs are combined together
 num = 2;
-quickerrorbar(num,
-	global_timing_04, % Plot global timings.
-	'nb threads', % Column for x
-	{'global time'}, % Columns for y (one curve per column)
-	{'global stddev'}, % Columns for standard deviation
-	{'count == count::10^{8}'}, % Filters for each curve to be plotted (100 million jumps only)
-	{}, % Label to replace x values. Use raw values
-	colors{num}, % Colors to be applied to the curves, written in RGB vector format
-	markers{num}, % Enough markers for 6 curves. Browse the web to find more.
-	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, % Markers size, curves' thickness, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.4 entropy '}, % Labels for curves
+quickerrorbar(num, ...
+	global_timing_04, ... % Plot global timings.
+	'nb threads', ... % Column for x
+	{'global time'}, ... % Columns for y (one curve per column)
+	{'global stddev'}, ... % Columns for standard deviation
+	{'count == count::10^{8}'}, ... % Filters for each curve to be plotted (100 million jumps only)
+	{}, ... % Label to replace x values. Use raw values
+	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
+	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
+	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
+	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	{'100m iteration, 0.4 entropy '}, ... % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-100' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 %% This graph is combined with the preivous graph, it keeps the same number
-quickbar(num,
-	colsep(where(thread_timing_04, 'count == count::10^{8}'), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
-	'nb threads', % x values
-	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, % Values for y, one column per bar
-	'', % Data filter to apply before plotting (100 million jumps only)
-	{}, % Label to replace x values. Use raw values
-	'grouped', 0.5, % Style of the bars ('grouped' or 'stacked')
-	'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, % Labels for curves of the previous graph and bars from this graph
+quickbar(num, ...
+	colsep(where(thread_timing_04, 'count == count::10^{8}'), 'nb threads', 'thread time', 0), ... % Plot global timings for 100 millions jumps only, thread by thread.
+	'nb threads', ... % x values
+	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, ... % Values for y, one column per bar
+	'', ... % Data filter to apply before plotting (100 million jumps only)
+	{}, ... % Label to replace x values. Use raw values
+	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
+	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
+	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	{'100m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-100' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 %% Now we want seq. to be at the end of the plot
@@ -156,29 +156,29 @@ thread_timing_04 = shuffle(thread_timing_04, {'nb threads'}, {{'2' '3' '4' '5' '
 % The two following graphs are combined together
 num = 3;
 quickerrorbar(3,
-	global_timing_04, % Plot global timings.
-	'nb threads', % Column for x
-	{'global time'}, % Columns for y (one curve per column)
-	{'global stddev'}, % Columns for standard deviation
-	{'count == count::2 10^8'}, % Filters for each curve to be plotted (100 million jumps only)
-	{}, % Label to replace x values. Use raw values
-	colors{num}, % Colors to be applied to the curves, written in RGB vector format
-	markers{num}, % Enough markers for 6 curves. Browse the web to find more.
-	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, % Markers size, curves' thickness, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.4 entropy '}, % Labels for curves
+	global_timing_04, ... % Plot global timings.
+	'nb threads', ... % Column for x
+	{'global time'}, ... % Columns for y (one curve per column)
+	{'global stddev'}, ... % Columns for standard deviation
+	{'count == count::2 10^8'}, ... % Filters for each curve to be plotted (100 million jumps only)
+	{}, ... % Label to replace x values. Use raw values
+	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
+	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
+	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
+	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	{'100m iteration, 0.4 entropy '}, ... % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 quickbar(num,
-	colsep(where(thread_timing_04, 'count == count::2 10^8'), 'nb threads', 'thread time', 0), % Plot global timings for 100 millions jumps only, thread by thread.
-	'nb threads', % x values
-	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, % Values for y, one column per bar
-	'', % Data filter to apply before plotting (100 million jumps only)
-	{}, % Label to replace x values. Use raw values
-	'grouped', 0.5, % Style of the bars ('grouped' or 'stacked')
-	'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
-	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
-	{'200m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, % Labels for curves of the previous graph and bars from this graph
+	colsep(where(thread_timing_04, 'count == count::2 10^8'), 'nb threads', 'thread time', 0), ... % Plot global timings for 100 millions jumps only, thread by thread.
+	'nb threads', ... % x values
+	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, ... % Values for y, one column per bar
+	'', ... % Data filter to apply before plotting (100 million jumps only)
+	{}, ... % Label to replace x values. Use raw values
+	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
+	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
+	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	{'200m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % Separate graph for task gantt representation

@@ -24,7 +24,8 @@
 %	argument. This function can only rearrange values having aliases.
 %	Note that this function sorts the data to accelerate processing;
 %	You may have to use orderby() if you need it sorted in a specific
-%	order.
+%	order. Note further that this affect the value of aliases, in
+%	particular when used in "where" clauses.
 %	
 %	
 %	Parameters:
