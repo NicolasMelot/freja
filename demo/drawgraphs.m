@@ -179,7 +179,7 @@ quickbar(num,
 	'MgOpenModernaBold.ttf', 8, 800, 400, % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', % Title of the graph, label of y axis and label of x axis.
 	{'200m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, % Labels for curves of the previous graph and bars from this graph
-	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200-2' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
+	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % Separate graph for task gantt representation
 %% We want the global line to be at the top
