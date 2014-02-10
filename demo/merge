@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#
+# Merge all data found for experiments given as argument, create a column name as
+# first argument and output the merged table to standard output
+#
+#
+#
+#
+
+
+. ./settings
+
+column=$1
+alias_column=""
+shift
+
+source=0;
+
+first_input=$1
+
+## Output data to file
+echo -e $DATA_BEGIN
+
+while (( $# > 0 ))
+do
+	while read i
+	do
+		input_dir=$i
+		## Process this argument only if it is a directory
+		if [ -d $input_dir ]
+		then
+			echo % From $input_dir
+			ls $input_dir/${output_base}_*_{$output_success,$output_failure}* 2> /dev/null | sort -V | xargs cat | tr \\\t ' ' | tr -s ' ' | sed -e "s/\(.*\)/$source \1/g"
+		fi
+
+	done < <(ls -d $1/*)
+
+	source=$(($source + 1))
+	alias_column="$alias_column'$1' "
+	shift
+done
+
+echo -e $DATA_END
+
+## Output column names to file
+echo -e $COLUMNS_BEGIN
+cat $first_input/table.m | perl -n0 -e "printf \"\$1\" if m/$column_list_name\\(\\)\\s*x\\s*=\\s*{\\s*([^\\n]*)\s*}\\s*;\\s*end/m" | sed -e "s/\(.*\)/\'$column\' \\1/g"
+echo -e $COLUMNS_END
+
+## Output value aliases to file
+echo -e $ALIAS_BEGIN
+cat $first_input/table.m | perl -n0 -e "printf \"\$1\" if m/$alias_list_name\\(\\)\\s*x\\s*=\\s*{\\s*([^\\n]*)\s*}\\s*;\\s*end/m" | sed -e "s/\(.*\)/{$alias_column} \\1/g"
+echo -e $ALIAS_END
+
+exit 0
