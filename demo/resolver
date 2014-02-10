@@ -44,18 +44,33 @@ index()
 	local alias_var=alias_$variable
 	eval alias_var=\('$'$alias_var\)
 
-	local size=${#content[@]}
 
 	## If the variable is not a numeric sequence or if an alias was given	
 	if ! is_number_seq ${content[@]} || (( ${#alias_var[@]} != 0 ))
 	then
-		for i in `seq 0 $(($size - 1))`
-		do
-			if [ "$value" == "${content[$i]}" ]
-			then
-				echo $i
-			fi
-		done
+		ref_var=ref_$variable
+		eval ref_var=\('$'$ref_var\)
+
+		if (( ${#ref_var[@]} > 0 ))
+		then
+			local size=${#ref_var[@]}
+			for i in `seq 0 $(($size - 1))`
+			do
+				if [ "$value" == "${ref_var[$i]}" ]
+				then
+					echo $i
+				fi
+			done
+		else
+			local size=${#content[@]}
+			for i in `seq 0 $(($size - 1))`
+			do
+				if [ "$value" == "${content[$i]}" ]
+				then
+					echo $i
+				fi
+			done
+		fi
 	else
 		echo $value
 	fi

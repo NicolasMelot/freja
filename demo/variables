@@ -41,6 +41,24 @@ try=`seq 1 10`				# Number of different run per setting
 output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec"
 
 ## Aliases for settings or columns (matching index value starting at 0)
-alias_count="10^{8} 2_10^8"
+#
+# /!\ Make sure you define a reference list of possible values, as
+# /!\ otherwise the content of a non-numeric variable will always be
+# /!\ resolved to a continuous sequence starting from 0, regardless of
+# /!\ previous run. If an experiment is run several times with the same
+# /!\ but a different value in variables, then different values can be
+# /!\ replaced with the same constant. New values can and should be added
+# /!\ to this reference as they start to be used, and never be removed
+# /!\ even if not used anymore.
+# /!\ make also sure alias_ and ref_ variable have the same consistent
+# /!\ amount of values.
+
+alias_count="10^7 5_10^7 10^{8} 2_10^8"
+ref_count="10000000 50000000 100000000 200000000"
+
 alias_thread="SEQ Thread_1 Thread_2 Thread_3 Thread_4 Thread_5 Thread_6 Thread_7 Thread_8"
+ref_thread="seq. over. `seq 2 8`"
+
 alias_try="1 2 3 4 5 6 7 8 9 10"
+ref_try="1 2 3 4 5 6 7 8 9 10"
+
