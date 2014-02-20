@@ -51,7 +51,8 @@
 %		col3
 %		col4
 %
-%             [1,3] = {{'zero' 'un' 'dos'} {'zero' 'one' 'two' 'three' 'four'} {}(0x0) {}(0x0)}
+%             [1,3] = {{'label zero' 'label un' 'label dos'} {'label zero' 'label one' 'label two' 'label three' 'label four'} {}(0x0) {}(0x0)}
+%             [1,4] = {{'zero' 'un' 'dos'} {'zero' 'one' 'two' 'three' 'four'} {}(0x0) {}(0x0)}
 %	}
 %	b = select(a, {'col1' 'col2'}, {'dos' 'un' 'zero'} {'four' 'three' 'two' 'one' 'zero'})
 %	b = {
@@ -69,9 +70,10 @@
 %		col3
 %		col4
 %
-%             [1,3] = {{'dos' 'un' 'zero'} {'four' 'three' 'two' 'one' 'zero'} {}(0x0) {}(0x0)}
+%             [1,3] = {{'label dos' 'label un' 'label zero'} {'label four' 'label three' 'label two' 'label one' 'label zero'} {}(0x0) {}(0x0)}
+%             [1,4] = {{'dos' 'un' 'zero'} {'four' 'three' 'two' 'one' 'zero'} {}(0x0) {}(0x0)}
 %	}
-function out = shuffle(table, cols, aliases)
+function out = shuffle(table, cols, refs)
 	check(table);
 	size_cols = size(cols);
 	size_cols = size_cols(2);
@@ -80,7 +82,10 @@ function out = shuffle(table, cols, aliases)
 	matrix_size = size(matrix);
 	matrix_size = matrix_size(2);
 
+	ref_out = ref(table, {''});
 	alias_out = alias(table, {''});
+
+	aliases=alias(table, {''});
 
 	for i = 1:size_cols
 		table = orderby(table, {cols{i}});
@@ -89,37 +94,45 @@ function out = shuffle(table, cols, aliases)
 
 		%% Initialize a new empty vector for this column
 		new_vector = [];
+		new_alias_row = {};
 
 		%% Number of different values we need to update
 		size_values = size(values);
 		size_values = size_values(1);
 
 		%% Number of aliases provided
-		size_new = size(aliases{i});
+		size_new = size(refs{i});
 		size_new = size_new(2);
 
 		%% Number of aliases already existing
-		size_old = alias(table, {cols{i}});
+		size_old = ref(table, {cols{i}});
 		size_old = size_old{:};
 		size_old = size(size_old);
 		size_old = size_old(2);
 
 		if size_new != size_old
-			error(['New alias set for column ''' cols{i} ''' has a different amount of alias than in table.'])
+			error(['New reference set for column ''' cols{i} ''' has a different amount of references than in table.'])
 		end
 
 		for j = 1:size_values
 			value = values(j) + 1;
 
 			%% Find the old alias for this value
+			old_ref = ref(table, {cols{i}});
+			old_ref = old_ref{:};
+			old_ref = old_ref{value};
+
+			%% Find the old alias for this value
 			old_alias = alias(table, {cols{i}});
 			old_alias = old_alias{:};
 			old_alias = old_alias{value};
 
+			old_index = cellfindstr(ref(table, {cols{i}}){1}, refs{i}{j});
+
 			%% Find the new index for this alias
-			new_index = cellfindstr(aliases{i}, old_alias);
+			new_index = cellfindstr(refs{i}, old_ref);
 			if new_index < 1
-				error(['Could not find alias ''' old_alias ''' in new aliases for column ''' cols{i} '''.']);
+				error(['Could not find alias ''' old_ref ''' in new aliases for column ''' cols{i} '''.']);
 			end
 
 			delta_index = value - new_index;
@@ -130,14 +143,21 @@ function out = shuffle(table, cols, aliases)
 			value_vector = value_vector - delta_index;
 			%% Add this vector to the new vector
 			new_vector = [new_vector; value_vector];
+
+			new_alias = alias(where(table, [ cols{i} ' == ' int2str(values(j)) ]), {cols{i}});
+			new_alias = new_alias{:};
+			new_alias = new_alias{old_index};
+			new_alias_row = {new_alias_row{:} new_alias};
 		end
 	
 		matrix = [matrix(:, 1:col_index - 1) new_vector matrix(:, col_index + 1:matrix_size)];
 		setd(table, matrix);
-		alias_out{col_index} = aliases{i};
+		aliases{col_index} = new_alias_row;
+		ref_out{col_index} = refs{i};
 	end
 
 	out{1} = matrix;
 	out{2} = table{2};
-	out{3} = alias_out;
+	out{3} = aliases;
+	out{4} = ref_out;
 end

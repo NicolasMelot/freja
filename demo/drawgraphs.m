@@ -111,8 +111,9 @@ quickplot(num, ...
 	global_timing_04, ... % Table to take data from
 	'nb threads', ... % Column for x values
 	{'global time', 'global time'}, ... % Columns for y values
-	{'count == count::10^{8}' 'count == count::2 10^8'}, ... % Filters for columns mentioned earlier.
+	{'count == count::100000000' 'count == count::200000000'}, ... % Filters for columns mentioned earlier.
 	{}, ... % Label to replace x values. Use raw values
+	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
 	thickness{num}, marker_size{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
@@ -127,8 +128,9 @@ quickerrorbar(num, ...
 	'nb threads', ... % Column for x
 	{'global time'}, ... % Columns for y (one curve per column)
 	{'global stddev'}, ... % Columns for standard deviation
-	{'count == count::10^{8}'}, ... % Filters for each curve to be plotted (100 million jumps only)
+	{'count == count::100000000'}, ... % Filters for each curve to be plotted (100 million jumps only)
 	{}, ... % Label to replace x values. Use raw values
+	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
 	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
@@ -138,11 +140,12 @@ quickerrorbar(num, ...
 
 %% This graph is combined with the preivous graph, it keeps the same number
 quickbar(num, ...
-	colsep(where(thread_timing_04, 'count == count::10^{8}'), 'nb threads', 'thread time', 0), ... % Plot global timings for 100 millions jumps only, thread by thread.
+	colsep(where(thread_timing_04, 'count == count::100000000'), 'nb threads', 'thread time', 0), ... % Plot global timings for 100 millions jumps only, thread by thread.
 	'nb threads', ... % x values
 	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, ... % Values for y, one column per bar
 	'', ... % Data filter to apply before plotting (100 million jumps only)
 	{}, ... % Label to replace x values. Use raw values
+	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
 	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
@@ -160,8 +163,9 @@ quickerrorbar(3,
 	'nb threads', ... % Column for x
 	{'global time'}, ... % Columns for y (one curve per column)
 	{'global stddev'}, ... % Columns for standard deviation
-	{'count == count::2 10^8'}, ... % Filters for each curve to be plotted (100 million jumps only)
+	{'count == count::200000000'}, ... % Filters for each curve to be plotted (100 million jumps only)
 	{}, ... % Label to replace x values. Use raw values
+	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
 	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
@@ -170,11 +174,12 @@ quickerrorbar(3,
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 quickbar(num,
-	colsep(where(thread_timing_04, 'count == count::2 10^8'), 'nb threads', 'thread time', 0), ... % Plot global timings for 100 millions jumps only, thread by thread.
+	colsep(where(thread_timing_04, 'count == count::200000000'), 'nb threads', 'thread time', 0), ... % Plot global timings for 100 millions jumps only, thread by thread.
 	'nb threads', ... % x values
 	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, ... % Values for y, one column per bar
 	'', ... % Data filter to apply before plotting (100 million jumps only)
 	{}, ... % Label to replace x values. Use raw values
+	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
 	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
@@ -182,8 +187,8 @@ quickbar(num,
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % Separate graph for task gantt representation
-%% We want the global line to be at the top
-gantt = shuffle(gantt, {'thread'}, {{'Thread 1' 'Thread 2' 'Thread 3' 'Thread 4' 'Thread 5' 'Thread 6' 'Thread 7' 'Thread 8' 'Global'}});
+%% We want the global line (SEQ) to be at the top
+gantt = shuffle(gantt, {'thread'}, {{'Thread_1' 'Thread_2' 'Thread_3' 'Thread_4' 'Thread_5' 'Thread_6' 'Thread_7' 'Thread_8' 'SEQ'}});
 
 num=4;
 quickgantt(num, ... % figure number id

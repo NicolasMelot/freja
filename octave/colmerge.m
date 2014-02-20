@@ -100,9 +100,12 @@ function out = colmerge(table, colx, coly, y_name)
 	%% Prepare the initial aliases
 	aliases = alias(table, {colx});
 	aliases = aliases{1};
+	refs = ref(table, {colx});
+	refs = refs{1};
 	source_size = coly{1};
 	source_size = size(source_size);
 	yname_alias = {};
+	yname_ref = {};
 	for i = 1:yname_size
 		sourcei_size = coly{i};
 		sourcei_size = size(sourcei_size);
@@ -117,18 +120,24 @@ function out = colmerge(table, colx, coly, y_name)
 		source1 = source1{1};
 		source1_alias = alias(table, {source1});
 		source1_alias = source1_alias{1};
+		source1_ref = ref(table, {source1});
+		source1_ref = source1_ref{1};
 		for j = 2:source_size
 			sourcei = coly{i};
 			sourcei = sourcei{i};
 			sourcei_alias = alias(table, {sourcei});
 			sourcei_alias = sourcei_alias{1};
+			sourcei_ref = ref(table, {sourcei});
+			sourcei_ref = sourcei_ref{1};
 			if ! isequaln(source1_alias, sourcei_alias)
 				error(['Sources to create column ''' yname{i} ''' have different aliases']);
 			end
 		end
 		yname_alias = {yname_alias{:} source1_alias};
+		yname_ref = {yname_ref{:} source1_ref};
 	end
 	aliases = {aliases yname_alias{:}};
+	refs = {refs yname_ref{:}};
 
 	%% Sort input table along x values
 	table = orderby(table, {colx});
@@ -176,5 +185,6 @@ function out = colmerge(table, colx, coly, y_name)
 	out{1} = matrix;
 	out{2} = {colx, y_name{:}};
 	out{3} = aliases;
+	out{4} = refs;
 end
 

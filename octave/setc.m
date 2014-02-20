@@ -72,6 +72,7 @@ function out = setc(table, coln)
 	out{1} = table{1};
 	out{2} = coln;
 	out{3} = table{3};
+	out{4} = table{4};
 end
 
 

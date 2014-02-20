@@ -58,6 +58,7 @@ global default_output_prefix = '';
 global default_output_extension = 'eps';
 global default_legend_location = 'northeast';
 global default_legend_box = 0;
+global default_group = 0;
 
 %% Declaration for default graph-specific parameters
 global hatches;
@@ -75,6 +76,7 @@ global font;
 global font_size;
 global width;
 global height;
+global group = 0;
 
 global output_format;
 global output_prefix;

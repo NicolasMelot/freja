@@ -40,6 +40,8 @@
 %	xval:   Labels to replace each x values (must be of same size as the column
 %		pointed by colx *after* the filter is applied). If the cell is
 %		empty, the colx column is directly used. (cell of strings).
+%	group:	If all values along the x axis are not continuous, draw the plot
+%		as if they were (boolean).
 %	style:	Style of the bar groups at each x step. For instance 'grouped'
 %		or 'stacked'; see help bar (string).
 %	thickn:	Thickness of the bars on the graph (scalar)
@@ -58,7 +60,7 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickbar(fignum, table, colx, coly, filter, xval, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
+function quickbar(fignum, table, colx, coly, filter, xval, group, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
 check(table);
 table = orderby(table, {colx});
 
@@ -90,6 +92,20 @@ colx_size = colx_size(1);
 
 all_x = data(table, {colx}, 0);
 
+if group
+	size_allx = size(all_x);
+	size_allx = size_allx(1);
+	allx_labels = {};
+	allx_values = [];
+
+	for i = 1:size_allx
+		allx_labels = {allx_labels{:} int2str(all_x(i))};
+		allx_values(i) = i;
+	end
+
+	all_x = allx_values;
+end
+
 matrix = [];
 for i = 1:colx_size
 	x = all_x(i);
@@ -98,18 +114,16 @@ for i = 1:colx_size
 	matrix_x = [matrix_x coly_x];
 	matrix = [matrix; matrix_x];
 end
-table = {matrix, {colx, 'coly'} {alias(table, {colx coly{1}}){:}}};
+table = {matrix, {colx, 'coly'} {alias(table, {colx coly{1}}){:}} {ref(table, {colx coly{1}}){:}} };
 coly='coly';
 
 x = data(groupby(select(table, {colx}, 0), {colx}, {}, {}), {colx}, 0);
-%current_x_data = where(table, {colx}, {[x(1)]});
 current_x_data = where(table, [ colx ' == ' int2str(x(1)) ]);
 y = data(current_x_data, {coly}, 0);
 
 maxi = size(x);
 maxi = maxi(1);
 for i = 2:maxi
-%	current_x_data = where(table, {colx}, {[x(i)]});
 	current_x_data = where(table, [ colx ' == ' int2str(x(i)) ]);
 	y = [y data(current_x_data, {coly}, 0)];
 end
@@ -166,7 +180,12 @@ else
 			error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' data-embedded labels.']);
 			return;
 		end
-	set(gca, 'XTick', x, 'XTickLabel', alias(table, {colx}){:});
+		set(gca, 'XTick', x, 'XTickLabel', alias(table, {colx}){:});
+	else
+		if group
+			set(gca, 'XTick', x, 'XTickLabel', allx_labels);
+		end
+	end
 end
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
@@ -175,3 +194,4 @@ hold off;
 set (0, 'defaultfigurevisible', 'on')
 	
 end
+

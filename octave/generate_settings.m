@@ -26,9 +26,10 @@
 %% Duplicate all default values as many times as necessary for each graph to get their own value
 function generate_settings()
 	global default_hatches default_hatch_pattern default_hatch_colors default_hatch_thickness default_pattern_thickness default_pattern_space default_colors default_markers default_thickness default_marker_size default_font default_font_size default_width default_height default_output_format default_output_prefix default_output_extension default_legend_location
-	global default_legend_box
+	global default_legend_box default_group
+
 	global hatches hatch_pattern hatch_colors hatch_thickness pattern_thickness pattern_space colors markers thickness marker_size font font_size width height output_format output_prefix output_extension legend_location
-	global legend_box
+	global legend_box group
 	global plot_number;
 
 	hatches = repmat({default_hatches}, [plot_number 1]);
@@ -48,6 +49,7 @@ function generate_settings()
 	height = repmat({default_height}, [plot_number 1]);
 	legend_location = repmat({default_legend_location}, [plot_number 1]);
 	legend_box = repmat({default_legend_box}, [plot_number 1]);
+	group = repmat({default_group}, [plot_number 1]);
 
 	output_format = repmat({default_output_format}, [plot_number 1]);
 	output_prefix = repmat({default_output_prefix}, [plot_number 1]);

@@ -51,7 +51,8 @@
 %		col3
 %		col4
 %
-%             [1,3] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
+%             [1,3] = {{'label zero' 'label one' 'label two' 'label three'} {'label zero' 'label un' 'label deux' 'label trois'} {}(0x0) {}(0x0)}
+%             [1,4] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
 %	}
 %	b = separate(a, 'col1', 'col2', 0)
 %	b = {
@@ -71,7 +72,8 @@
 %		col3
 %		col4
 %
-%             [1,3] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {'zero' 'un' 'deux' trois'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
+%             [1,3] = {{'label zero' 'label one' 'label two' 'label three'} {'label zero' 'label un' 'label deux' 'label trois'} {'label zero' 'label un' 'label deux' 'label trois'} {'label zero' 'label un' 'label deux' 'label trois'} {}(0x0) {}(0x0)}
+%             [1,4] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' 'trois'} {'zero' 'un' 'deux' trois'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
 %	}
 
 function out = colsep(table, colx, coly, def)
@@ -106,11 +108,15 @@ function out = colsep(table, colx, coly, def)
 	for i = 2:lines_per_group
 		data_y = data(out, {coly}, 0);
 		alias_y = alias(out, {coly});
+		ref_y = ref(out, {coly});
+
 		data_all = data(out, {''}, 0);
 		alias_all = alias(out, {''});
+		ref_all = ref(out, {''});
+
 		names = coln(out);
 		data_y = circshift(data_y, -i + 1);
-		out = { [data_all data_y] { names{:} request_name(names, coly) } { alias_all{:} alias_y{:} } };
+		out = { [data_all data_y] { names{:} request_name(names, coly) } { alias_all{:} alias_y{:} } { ref_all{:} ref_y{:} } };
 	end
 
 	% Final: get rid of all lines becoming useless

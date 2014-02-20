@@ -27,6 +27,8 @@ is_number_seq()
 }
 
 ## Returns the numeric index of a string in a non-numeric sequence stored in a variable in the variables files
+## Save the symbolic values and alias in the file "references" to prevent the use of the same index for a different
+## variable value, accross different batch runs
 ## If the string is a numeric value coming from a numeric sequence, then return the same numeric string
 index()
 {
@@ -39,40 +41,100 @@ index()
 	. ./variables
 	local content=
 	eval content=\('$'$variable\)
+	local size_content=${#content[@]}
+
+	## Get the index of the value given
+	for i in `seq 0 $(( $size_content - 1 ))`
+	do
+		if [ "$value" == "${content[$i]}" ]
+		then
+			value_index=$i
+		fi
+	done
+
+	## Load variable references, if any
+	if [ -f ./references ]
+	then
+		. ./references
+	fi
+
+	local symb_var=symb_$variable
+	eval symb_var=\('$'$symb_var\)
 
 	## Check if there is an alias for this variable
 	local alias_var=alias_$variable
 	eval alias_var=\('$'$alias_var\)
-
+	
+	local ref_var=ref_$variable
+	eval ref_var=\('$'$ref_var\)
 
 	## If the variable is not a numeric sequence or if an alias was given	
-	if ! is_number_seq ${content[@]} || (( ${#alias_var[@]} != 0 ))
+	if ! is_number_seq ${content[@]} || (( ${#alias_var[@]} != 0 )) || (( ${#content[@]} == 0 )) || (( ${#ref_var[@]} != 0 ))
 	then
 		ref_var=ref_$variable
 		eval ref_var=\('$'$ref_var\)
 
-		if (( ${#ref_var[@]} > 0 ))
+		local size=${#ref_var[@]}
+		final_i=0
+		for i in `seq 0 $(($size - 1))`
+		do
+			if [ "$value" == "${ref_var[$i]}" ]
+			then
+				## return the index value requested
+				echo $i
+
+				## Update this symbol with the alias given
+				if [ "${alias_var[$value_index]}" == "" ]
+				then
+					symb_var[$i]=$value
+				else
+					symb_var[$i]=${alias_var[$value_index]}
+				fi
+				if [ -f references ]
+				then
+					cat references | grep -Ev '^symb_'$variable= > /tmp/ref.$$.tmp
+					cat /tmp/ref.$$.tmp > references
+				fi
+				local new_symb=`echo symb_$variable=\"$(echo ${symb_var[@]})`\"
+				echo $new_symb >> references
+
+				## Return from the function
+				return 0
+			fi
+			final_i=$(($i + 1))
+		done
+		
+		i=$final_i
+
+		## If no reference value could be found, then
+		## just issue a new index
+		echo $i
+
+		## Add this new value to the reference list
+		local new_ref=`echo ref_$variable=\"$(echo ${ref_var[@]} $value)`\"
+		if [ "${alias_var[$value_index]}" == "" ]
 		then
-			local size=${#ref_var[@]}
-			for i in `seq 0 $(($size - 1))`
-			do
-				if [ "$value" == "${ref_var[$i]}" ]
-				then
-					echo $i
-				fi
-			done
+			new_symb=$value
 		else
-			local size=${#content[@]}
-			for i in `seq 0 $(($size - 1))`
-			do
-				if [ "$value" == "${content[$i]}" ]
-				then
-					echo $i
-				fi
-			done
+			new_symb=${alias_var[$value_index]}
 		fi
+		local new_symb=`echo symb_$variable=\"$(echo ${symb_var[@]} $new_symb)`\"
+		if [ -f references ]
+		then
+			cat references | grep -Ev '^(ref|symb)_'$variable= > /tmp/ref.$$.tmp
+			cat /tmp/ref.$$.tmp > references
+		fi
+		echo $new_ref >> references
+		echo $new_symb >> references
 	else
 		echo $value
+
+		if [ -f references ]
+		then
+			echo -n
+			cat references | grep -Ev '^(ref|symb)_'$variable= > /tmp/ref.$$.tmp
+			cat /tmp/ref.$$.tmp > references
+		fi
 	fi
 }
 

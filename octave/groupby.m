@@ -67,6 +67,7 @@
 %		col5
 %
 %             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0) {}(0x0)}
+%             [1,4] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 %	b = groupby(a, {'col1' 'col2'}, {'col3' 'col4'}, {@mean, @returns_2_rows_of_constant_values_x_and_y})
 %	b = {
@@ -86,6 +87,7 @@
 %		col5
 %
 %             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0) {}(0x0)}
+%             [1,4] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
 function out = groupby(table, colg, apply, func, def)
@@ -182,6 +184,9 @@ new_data = [];
 alias_g = {};
 alias_non_selected = {};
 alias_apply = {};
+ref_g = {};
+ref_non_selected = {};
+ref_apply = {};
 
 for i = 1:cell_size
 	# extract the group's key (denoted by colg parameter).
@@ -191,6 +196,7 @@ for i = 1:cell_size
 		group_key(1, j) = old_recipient{i}(1, index);
 		table_name{1, j} = colg{j};
 		alias_g{j} = table{3}{index};
+		ref_g{j} = table{4}{index};
 	end
 
 	% Take all non-selected columns and add them to the basic group
@@ -202,12 +208,14 @@ for i = 1:cell_size
 		index = cellfindstr(table{2}, non_selected{j});
 		group_key(1, colg_size + j) = old_recipient{i}(1, index);
 		alias_non_selected{j} = table{3}{index};
+		ref_non_selected{j} = table{4}{index};
 	end
 
 	# Apply function to the rest of data
 	for j = 1:apply_size
 		index = cellfindstr(table{2}, apply{j});
 		alias_apply{j} = table{3}{index};
+		ref_apply{j} = table{4}{index};
 		if index < 1
 			error(['Could not find column ''' apply{j} ''' in table.']);
 		end
@@ -247,8 +255,9 @@ end
 % Add non-selected and apply column names 
 table_name = {table_name{:} non_selected{:} apply{:}};
 alias_new = {alias_g{:} alias_non_selected{:} alias_apply{:}};
+ref_new = {ref_g{:} ref_non_selected{:} ref_apply{:}};
 
 % Wrap everything up in a cell
-out = {new_data, table_name, alias_new};
+out = {new_data, table_name, alias_new, ref_new};
 
 end

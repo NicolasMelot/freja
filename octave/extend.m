@@ -155,6 +155,7 @@ end
 out{1} = data;
 out{2} = coln;
 out{3} = table{3};
+out{4} = table{4};
 
 end
 

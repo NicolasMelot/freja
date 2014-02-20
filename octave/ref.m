@@ -21,7 +21,7 @@
 %
 %	Function alias
 %
-%	Extract aliases for values contained in columns given as input
+%	Extract reference string for values contained in columns given as input
 %	
 %	
 %	Parameters:
@@ -51,12 +51,12 @@
 %             [1,3] = {{'label zero' 'label one'} {'label zero' 'label en' 'label dos' 'label tre'} {'label un' 'label deux' 'label trois' 'label quatre' 'label cinq' 'label six' 'label sept'} {'label en' 'label tva' 'label tre' 'label fyra' 'label fem' 'label sex' 'label sju' 'label atta' 'label nio'}}
 %             [1,4] = {{'zero' 'one'} {'zero' 'en' 'dos' 'tre'} {'un' 'deux' 'trois' 'quatre' 'cinq' 'six' 'sept'} {'en' 'tva' 'tre' 'fyra' 'fem' 'sex' 'sju' 'atta' 'nio'}}
 %	}
-%	b = alias(a, {'spanish' 'swedish'})
+%	b = ref(a, {'spanish' 'swedish'})
 %	b = {
-%             {'label zero' 'label en' 'label dos' 'label tre'} {'label en' 'label tva' 'label tre' 'label fyra' 'label fem' 'label sex' 'label sju' 'label atta' 'label nio'}
+%             {'zero' 'en' 'dos' 'tre'} {'en' 'tva' 'tre' 'fyra' 'fem' 'sex' 'sju' 'atta' 'nio'}
 %	}
 
-function out = alias(table, cols)
+function out = ref(table, cols)
 	check(table);
 
 	out = {};
@@ -65,11 +65,11 @@ function out = alias(table, cols)
 
 	for i = 1:csize
 		if strcmp(cols{i}, '')
-			out = {out{:} table{3}{:} };
+			out = {out{:} table{4}{:}};
 		else
 			index = cellfindstr(coln(table), cols{i});
 			if index > 0
-				out = { out{:} table{3}{index} };
+				out = { out{:} table{4}{index} };
 			end
 		end
 	end

@@ -47,7 +47,8 @@
 %		col3
 %		col4
 %
-%             [1,3] = {{}(0x0) {}(0x0) {'' ''} {}(0x0)}
+%             [1,3] = {{}(0x0) {}(0x0) {'label zero' 'label one'} {}(0x0)}
+%             [1,4] = {{}(0x0) {}(0x0) {'zero' 'one'} {}(0x0)}
 %	}
 %	b = duplicate(a, {'col3' 'col4' 'col4' 'col_none'}, {'col3b', 'col4b', 'col4c', 'new_col'}, 9)
 %	b = {
@@ -65,7 +66,8 @@
 %		col4c
 %		new_col
 %
-%             [1,3] = {{}(0x0) {}(0x0) {'zero' 'one'} {}(0x0)} {'zero' 'one'} {}(0x0) {}(0x0) {}(0x0)}
+%             [1,3] = {{}(0x0) {}(0x0) {'label zero' 'label one'} {}(0x0)} {'label zero' 'label one'} {}(0x0) {}(0x0) {}(0x0)}
+%             [1,4] = {{}(0x0) {}(0x0) {'zero' 'one'} {}(0x0)} {'zero' 'one'} {}(0x0) {}(0x0) {}(0x0)}
 %	} 
 
 function out = duplicate(table, src, names, def)
@@ -79,6 +81,7 @@ function out = duplicate(table, src, names, def)
 	tbl_size = tbl_size(2);
 	col = table{2};
 	aliases = table{3};
+	refs = table{4};
 
 	for i = 1:src_size
 		index = cellfindstr(table{2}, src{i});
@@ -86,11 +89,13 @@ function out = duplicate(table, src, names, def)
 		if index > 0
 			data(:, tbl_size) = data(:, index);
 			aliases{tbl_size} = table{3}{index};
+			refs{tbl_size} = table{4}{index};
 		else
 			data_size = size(data(:, 1));
 			data_size = data_size(1);
 			data(:, tbl_size) = ones(data_size, 1) .* def;
 			aliases{tbl_size} = {};
+			refs{tbl_size} = {};
 		end
 		col{tbl_size} = names{i};
 	end
@@ -98,5 +103,6 @@ function out = duplicate(table, src, names, def)
 	out{1} = data;
 	out{2} = col;
 	out{3} = aliases;
+	out{4} = refs;
 end
 

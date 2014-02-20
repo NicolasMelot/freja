@@ -49,6 +49,7 @@
 %		col4
 %
 %             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
+%             [1,4] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 %	b = tablesort(a, {'col1' 'col2'])
 %	b = {
@@ -67,6 +68,7 @@
 %		col4
 %
 %             [1,3] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
+%             [1,4] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
 function out = orderby(table, cols)
@@ -90,4 +92,5 @@ function out = orderby(table, cols)
 	out{1} = matrix;
 	out{2} = coln(table);
 	out{3} = alias(table, {''});
+	out{4} = ref(table, {''});
 end

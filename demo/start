@@ -118,6 +118,11 @@ merge_dir()
 
 	info Merging all results to $output_file
 
+	if [ -f references ]
+	then
+		. ./references
+	fi
+
 	## Output data to file
 	echo -e $DATA_BEGIN > $output_file
 	while [ "$#" != "0" ]
@@ -140,23 +145,84 @@ merge_dir()
 	echo ${compile[@]}\ ${run[@]}\ $output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | while read line; do echo -en \'$line\'\ | tr _ ' ' | tr '~' '_'; done >> $output_file
 	echo -e $COLUMNS_END >> $output_file
 
-	## Output value aliases to file
-	echo -e $ALIAS_BEGIN >> $output_file
+	## Output value symbols to file
+	echo -e $SYMB_BEGIN >> $output_file
 	local variable="${compile[@]} ${run[@]} $output_columns"
 	eval variable=\($variable\)
 	local variable_size=${#variable[@]}
 
 	seq 0 $(($variable_size - 1)) | tr ' ' \\\n | while read i
 	do
-		local alias=alias_${variable[$i]}
-		eval alias=\('$'$alias\)
-		local alias_size=${#alias[@]}
+		local symb=symb_${variable[$i]}
+		eval symb=\('$'$symb\)
+		local symb_size=${#symb[@]}
 
-		if (( $alias_size > 0 ))
+		local ref=ref_${variable[$i]}
+		eval ref=\('$'$ref\)
+		local ref_size=${#ref[@]}
+
+		if (( $symb_size > 0 )) && (( $ref_size > 0 ))
 		then
-			## If it has an alias, then generate a row with alias values
 			echo -n "{"
-			for i in ${alias[@]}
+			for i in ${symb[@]}
+			do
+				echo -n \'$i\'\  
+			done
+			echo -n "} "
+		else
+			## OK there was no symbol collected, but maybe there are symbols anyway
+			## for run-generated columns
+			local alias=alias_${variable[$i]}
+			eval alias=\('$'$alias\)
+			local alias_size=${#alias[@]}
+
+			if (( $alias_size > 0 ))
+			then
+			echo -n "{"
+				for i in ${alias[@]}
+				do
+					echo -n \'$i\'\  
+				done
+				echo -n "} "			
+			else
+				## Otherwise...
+				local values=${variable[$i]}
+				eval values=\('$'$values\)
+
+				if ! is_number_seq ${values[@]}
+				then
+					## If it is NOT a numeric column, then generate a row with non-numeric raw values
+					echo -n "{"
+					for i in ${values[@]}
+					do
+						echo -n \'$i\'\  
+					done
+					echo -n "} "
+				else
+					## Else generate an empty row
+					echo -n '{} '
+				fi
+			fi
+		fi
+	done | tr _ ' ' | tr '~' _ >> $output_file
+	echo -e $SYMB_END >> $output_file
+
+	## Output value reference to file
+	echo -e $REF_BEGIN >> $output_file
+	local variable="${compile[@]} ${run[@]} $output_columns"
+	eval variable=\($variable\)
+	local variable_size=${#variable[@]}
+
+	seq 0 $(($variable_size - 1)) | tr ' ' \\\n | while read i
+	do
+		local ref=ref_${variable[$i]}
+		eval ref=\('$'$ref\)
+		local ref_size=${#ref[@]}
+
+		if (( $ref_size > 0 ))
+		then
+			echo -n "{"
+			for i in ${ref[@]}
 			do
 				echo -n \'$i\'\  
 			done
@@ -180,8 +246,8 @@ merge_dir()
 				echo -n '{} '
 			fi
 		fi
-	done | tr _ ' ' | tr '~' _ >> $output_file
-	echo -e $ALIAS_END >> $output_file
+	done >> $output_file
+	echo -e $REF_END >> $output_file
 }
 
 compile()
@@ -271,7 +337,6 @@ batch()
 			info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 			local instance_start=`date +%s`
 			local args_index=`index_seq run $args`
-
 			local basename=${output_base}_${instance_number}
 
 			## Only run this experiment if there is no output for this one
@@ -280,6 +345,7 @@ batch()
 				local outcome="Skipped"
 				local skipped=$(($skipped + 1))
 			else
+				touch $output_dir/${basename}_$output_progress
 				bash ./run $flags $args | while read line;
 				do
 					local content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`

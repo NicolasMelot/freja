@@ -65,5 +65,6 @@ function out = apply(table, col, func, aux)
 	out{1} = matrix;
 	out{2} = table{2};
 	out{3} = table{3};
+	out{4} = table{4};
 end
 

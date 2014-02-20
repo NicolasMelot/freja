@@ -68,7 +68,7 @@ hold on;
 xmin = 0;
 xmax = 0;
 cell={};
-actor_val = alias(table, {actor}){:};
+actor_val = ref(table, {actor}){:};
 actor_val_size = size(actor_val);
 actor_val_size = actor_val_size(2);
 

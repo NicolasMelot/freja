@@ -37,6 +37,8 @@
 %	xval:   Labels to replace each x values (must be of same size as the column
 %		pointed by colx *after* the filter is applied). If the cell is
 %		empty, the colx column is directly used. (cell of strings).
+%	group:	If all values along the x axis are not continuous, draw the plot
+%		as if they were (boolean).
 %	error:	Base value from which the bar of the histogram start. This
 %		shifts up or down the y value to be plotted. When y values are
 %		high or zeros, a base of -1 makes possible to see bars
@@ -65,7 +67,7 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickplot(fignum, table, colx, coly, filter, xval, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
+function quickplot(fignum, table, colx, coly, filter, xval, group, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
 
 check(table);
 table = orderby(table, {colx});
@@ -82,6 +84,7 @@ figure(fignum);
 
 hold on;
 
+all_x = [];
 maxi = size(coly);
 maxi = maxi(2);
 for i = 1:maxi
@@ -98,6 +101,7 @@ for i = 1:maxi
 		filtering='table';
 	end
 	src = eval(filtering);
+	all_x = [all_x data(src, {colx}, 0)];
 	plotting(i) = plot(data(src, {colx}, 0), data(src, {coly{i}}, 0));
 
 	set(plotting(i), 'marker', marks{1, i});
@@ -105,6 +109,24 @@ for i = 1:maxi
 	set(plotting(i), 'linewidth', curvew);
 	set(plotting(i), 'color', colors{1, i});
 end
+
+all_x = unique(sort(all_x));
+if group
+	size_allx = size(all_x);
+	size_allx = size_allx(1);
+	allx_labels = {};
+	allx_values = [];
+
+	for i = 1:size_allx
+		allx_labels = {allx_labels{:} int2str(all_x(i))};
+		allx_values(i) = i;
+	end
+
+	all_x = allx_values;
+else
+	all_x = data(src, {colx}, 0);
+end
+
 
 % Here come the general graph settings
 g_title = title(grapht);
@@ -144,7 +166,12 @@ else
 			error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' data-embedded labels.']);
 			return;
 		end
-	set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', alias(table, {colx}){:});
+		set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', alias(table, {colx}){:});
+	else
+		if group
+			set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', allx_labels);
+		end
+	end
 end
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);

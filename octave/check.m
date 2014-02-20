@@ -43,8 +43,12 @@ function y = check(table)
 	alias = size(alias);
 	alias = alias(2);
 
-	if data != columns || data != alias || columns != alias
-		error(['Table format inconsistency: ' int2str(data) ' columns, ' int2str(columns) ' column names and ' int2str(alias) ' column value aliases.']);
+	ref = table{4};
+	ref = size(ref);
+	ref = ref(2);
+
+	if data != columns || data != alias || data != ref || columns != alias || columns != ref || alias != ref
+		error(['Table format inconsistency: ' int2str(data) ' columns, ' int2str(columns) ' column names, ' int2str(alias) ' column value aliases and ' int2str(ref) ' value references. They should all be equal']);
 		y = 0;
 	end
 	
