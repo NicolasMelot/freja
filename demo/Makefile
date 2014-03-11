@@ -23,7 +23,8 @@ NB_THREADS=1
 ENTROPY=0.01
 SUFFIX=
 
-CFLAGS=-g -O0 -Wall -lrt -pthread -DMEASURE -DNB_THREADS=$(NB_THREADS) -DENTROPY=$(ENTROPY)
+CFLAGS=-g -O0 -Wall -DMEASURE -DNB_THREADS=$(NB_THREADS) -DENTROPY=$(ENTROPY)
+LDFLAGS=-lrt -pthread
 
 TARGET=program$(SUFFIX)
 
@@ -36,7 +37,7 @@ clean:
 	$(RM) *.zip
 	
 $(TARGET): program.c
-	gcc $(CFLAGS) -o program$(SUFFIX) program.c
+	gcc $(CFLAGS) -o program$(SUFFIX) program.c $(LDFLAGS)
 
 .PHONY: all clean dist
 

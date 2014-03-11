@@ -8,7 +8,6 @@
 #
 #
 
-
 . ./settings
 . ./variables
 . ./resolver
@@ -38,7 +37,9 @@ do
 		if [ -d $input_dir ]
 		then
 			echo % From $input_dir
-			ls $input_dir/${output_base}_*_{$output_success,$output_failure}* 2> /dev/null | sort -V | xargs cat | tr \\\t ' ' | tr -s ' ' | sed -e "s/\(.*\)/$index \1/g"
+			#ls $input_dir/${output_base}_*_{$output_success,$output_failure}* 2> /dev/null | sort -V | xargs cat | tr \\\t ' ' | tr -s ' ' | sed -e "s/\(^[:space:]*[^%[:space:]].*\)/0 \1/g"
+			ls $input_dir/${output_base}_*_{$output_success,$output_failure}* | while read i; do echo % From $i:; cat $i; done
+			
 		fi
 
 	done < <(ls -d $1/*)
