@@ -83,7 +83,7 @@ function out = where(table, cond)
 
 	%% Part 1: find and replace all aliases with their value
 	%% Find all occurrence of the form (simplified) bla bla bla::hello or bla bla bla::45 
-	aliases = regexp(cond, '([\w_{}^.]|[\w_{}^.][\w\d_{,}^.]|[\w_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])::([\w\d_{}^.]|[\w\d_{}^.][\w\d_{,}^.]|[\w\d_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])\s*([()&|<>=!+-/*]|$)', 'match');
+	aliases = regexp(cond, '([\w_{}^.]|[\w_{}^.][\w\d_{,}^.]|[\w_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])::([\w\d_{}^.]|[\w\d_{}^.][\w\d_{,}^.]|[\w\d_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])\s*([()&|<>=!+/*-]|$)', 'match');
 
 	%% Resolve the value for each alias
 	alias_size = size(aliases);
