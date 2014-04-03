@@ -78,15 +78,16 @@ function out = shuffle(table, cols, refs)
 	size_cols = size(cols);
 	size_cols = size_cols(2);
 
-	matrix = data(table, {''}, 0);
-	matrix_size = size(matrix);
-	matrix_size = matrix_size(2);
-
 	alias_out = alias(table, {''});
 	ref_out = ref(table, {''});
 
 	for i = 1:size_cols
 		table = orderby(table, {cols{i}});
+
+		matrix = data(table, {''}, 0);
+		matrix_size = size(matrix);
+		matrix_size = matrix_size(2);
+
 		values = data(groupby(table, {cols{i}}, {}, {}), {cols{i}}, 0);
 		col_index = cellfindstr(coln(table), cols{i});
 
@@ -108,7 +109,7 @@ function out = shuffle(table, cols, refs)
 		size_old = size_old(2);
 
 		if size_new != size_old
-			error(['New reference set for column ''' cols{i} ''' has a different amount of reference than in table.']);
+			error(['New reference set for column ''' cols{i} ''' has a different amount of reference (' int2str(size_new) ') than in table (' int2str(size_old) ').']);
 		end
 
 		%% Initialise an empty alias collection
@@ -147,18 +148,21 @@ function out = shuffle(table, cols, refs)
 			value_vector = value_vector - delta_index;
 			%% Add this vector to the new vector
 			new_vector = [new_vector; value_vector];
+
 		end
 	
 		matrix = [matrix(:, 1:col_index - 1) new_vector matrix(:, col_index + 1:matrix_size)];
-		setd(table, matrix);
+		table = setd(table, matrix);
 		ref_out{col_index} = refs{i};
 
-		%% TODO: compute a new alias vector
 		alias_out{col_index} = aliases{i};
 	end
 
 	out{1} = matrix;
 	out{2} = table{2};
+	%% Data have already been updated
+	%% Column names are already copied
+	%% Copy updated reference and aliases
 	out{3} = alias_out;
 	out{4} = ref_out;
 end
