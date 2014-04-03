@@ -113,7 +113,7 @@ function out = where(table, cond)
 	end
 
 	%% Part 2: Resolve line index for each variable
-	variables = regexp(cond, '([a-zA-Z_{}]|[a-zA-Z_{}][0-9,a-zA-Z_{}.^]|[a-zA-Z_{}][0-9, a-zA-Z_{}.^]+[0-9,a-zA-Z_{}.^])\s*([()&|<>=!+-/*]|$)', 'match');
+	variables = regexp(cond, '([a-zA-Z_{}]|[a-zA-Z_{}][0-9,a-zA-Z_{}.^]|[a-zA-Z_{}][0-9, a-zA-Z_{}.^]+[0-9,a-zA-Z_{}.^])\s*([()&|<>=!+/*-]|$)', 'match');
 
 	%% Resolve the value for each variable
 	variable_size = size(variables);
