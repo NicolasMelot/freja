@@ -1,5 +1,12 @@
 #!/bin/bash
 
+trap exiting SIGINT
+cleanup()
+{
+	rm /tmp/ref.$$.tmp
+	exit 1
+}
+
 ## Returns true if $1 is an integer or a decimal
 is_number()
 {
@@ -94,6 +101,7 @@ index()
 				then
 					cat references | grep -Ev '^symb_'$variable= > /tmp/ref.$$.tmp
 					cat /tmp/ref.$$.tmp > references
+					rm /tmp/ref.$$.tmp
 				fi
 				local new_symb=`echo symb_$variable=\"$(echo ${symb_var[@]})`\"
 				echo $new_symb >> references
@@ -123,6 +131,7 @@ index()
 		then
 			cat references | grep -Ev '^(ref|symb)_'$variable= > /tmp/ref.$$.tmp
 			cat /tmp/ref.$$.tmp > references
+			rm /tmp/ref.$$.tmp
 		fi
 		echo $new_ref >> references
 		echo $new_symb >> references
@@ -134,6 +143,7 @@ index()
 			echo -n
 			cat references | grep -Ev '^(ref|symb)_'$variable= > /tmp/ref.$$.tmp
 			cat /tmp/ref.$$.tmp > references
+			rm /tmp/ref.$$.tmp
 		fi
 	fi
 }

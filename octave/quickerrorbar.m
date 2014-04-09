@@ -143,15 +143,25 @@ ylim([min_value - (max_value - min_value) / y_marging, max_value + (max_value - 
 if group
 	size_allx = size(all_x);
 	size_allx = size_allx(1);
+
 	allx_labels = {};
+	allx_alias = {};
+	allx_ref = {};
 	allx_values = [];
+
+	all_alias = alias(table, {colx}){:};
+	all_ref = ref(table, {colx}){:};
+	size_alias=prod(size(all_alias));
 
 	for i = 1:size_allx
 		allx_labels = {allx_labels{:} int2str(all_x(i))};
 		allx_values(i) = i;
-	end
 
-	all_x = allx_values;
+		if size_alias > 0
+			allx_alias = {allx_alias{:} all_alias{all_x(i) + 1}};
+			allx_ref = {allx_ref{:} all_ref{all_x(i) + 1}};
+		end
+	end
 else
 	all_x = data(src, {colx}, 0);
 end
@@ -194,7 +204,8 @@ else
 			error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' data-embedded labels.']);
 			return;
 		end
-		set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', alias(table, {colx}){:});
+		%set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', alias(table, {colx}){:});
+		set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', allx_alias);
 	else
 		if group
 			set(gca, 'XTick', data(src, {colx}, 0), 'XTickLabel', allx_labels);

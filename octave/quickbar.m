@@ -105,11 +105,22 @@ if group
 	size_allx = size_allx(1);
 
 	allx_labels = {};
+	allx_alias = {};
+	allx_ref = {};
 	allx_values = [];
+
+	all_alias = alias(table, {colx}){:};
+	all_ref = ref(table, {colx}){:};
+	size_alias=prod(size(all_alias));
 
 	for i = 1:size_allx
 		allx_labels = {allx_labels{:} int2str(all_x(i))};
 		allx_values(i) = i;
+
+		if size_alias > 0
+			allx_alias = {allx_alias{:} all_alias{all_x(i) + 1}};
+			allx_ref = {allx_ref{:} all_ref{all_x(i) + 1}};
+		end
 	end
 
 	all_x = allx_values;
@@ -123,8 +134,8 @@ for i = 1:colx_size
 	matrix_x = [matrix_x coly_x];
 	matrix = [matrix; matrix_x];
 end
-table = {matrix, {colx, 'coly'} {alias(table, {colx coly{1}}){:}} {ref(table, {colx coly{1}}){:}} };
-coly='coly';
+table = {matrix, {colx, 'coly'} {allx_alias alias(table, {coly{1}}){:}} {allx_ref ref(table, {coly{1}}){:}} };
+coly = 'coly';
 
 x = data(groupby(select(table, {colx}, 0), {colx}, {}, {}), {colx}, 0);
 current_x_data = where(table, [ colx ' == ' int2str(x(1)) ]);
@@ -187,12 +198,12 @@ set(g_title, 'fontsize', fonts);
 set (findobj (gcf, '-property', 'fontname'), 'fontname', fontn);
 set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
 
+%% Manage labels for all x values
 xval_size = prod(size(xval));
 if xval_size > 0
-	%% If there is only one x value, then add mockup labels for surrounding mockup x values
+	%% If there is only one real x value, remove mockup values to create only one label
 	if maxi == 1
-		xval = {empty_label xval(x(2)){:} empty_label};
-		xval_size = 3;
+		x = x(2);
 	end
 	if xval_size < maxi
 		error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' labels.']);
@@ -200,24 +211,24 @@ if xval_size > 0
 	end
 	set(gca, 'XTick', x, 'XTickLabel', xval);
 else
-	xval_size = prod(size(alias(table, {colx}){:}));
+	xval_size = prod(size(alias(table, {colx}){:}))
 	if xval_size > 0
 		if xval_size < maxi
 			error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' data-embedded labels.']);
 			return;
 		end
 
-		xval = alias(table, {colx}){:};
-		%% If there is only one x value, then add mockup labels for surrounding mockup x values
+		xval = alias(table, {colx}){:}
+		%% If there is only one real x value, remove mockup values to create only one label
 		if maxi == 1
-			xval = {empty_label xval(x(2)){:} empty_label};
+			x = x(2);
 		end
 		set(gca, 'XTick', x, 'XTickLabel', xval);
 	else
 		if group
-			%% If there is only one x value, then add mockup labels for surrounding mockup x values
+			%% If there is only one real x value, remove mockup values to create only one label
 			if maxi == 1
-				allx_labels = {empty_label allx_labels{1} empty_label};
+				x = x(2);
 			end
 			set(gca, 'XTick', x, 'XTickLabel', allx_labels);
 		end
