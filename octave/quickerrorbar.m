@@ -69,6 +69,12 @@
 function quickerrorbar(fignum, table, colx, coly, err, filter, xval, group, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
 
 check(table);
+
+size_data = size(data(table, {''}, 0));
+if prod(size_data) == 0
+	warning(['No data to plot for graph ' int2str(fignum) ' ''' outf '''; skipping.']);
+	return
+end
 table = orderby(table, {colx});
 
 data_x = cellfindstr(coln(table), colx);

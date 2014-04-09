@@ -48,7 +48,7 @@
 %		parameters are undefined and can be removed (cell of function
 %		pointers). @first and @alllines respectively return the first row in a
 %		group and all rows of the group.
-%	out:	The table so transformed (table)
+%	out:	The table after transformation (table).
 %
 %	Example:
 %	a = {
@@ -105,6 +105,14 @@ end
 matrix = table{1};
 nb_col = size(col);
 nb_col = nb_col(2);
+
+% Exit if the table contains no data
+nb_row = size(matrix);
+nb_row = nb_row(1);
+if nb_row == 0
+	out = table;
+	return
+end
 
 % Warm-up
 old_size = 1;

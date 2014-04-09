@@ -61,7 +61,16 @@
 %		(string).
 
 function quickbar(fignum, table, colx, coly, filter, xval, group, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
+%% Define a label for mock x values in the case of providing a unique x values that the backend bar() function cannot handle
+empty_label = '';
 check(table);
+
+size_data = size(data(table, {''}, 0));
+if prod(size_data) == 0
+	warning(['No data to plot for graph ' int2str(fignum) ' ''' outf '''; skipping.']);
+	return
+end
+
 table = orderby(table, {colx});
 
 data_x = cellfindstr(coln(table), colx);
@@ -90,11 +99,11 @@ coly_size = coly_size(2);
 colx_size = size(data(table, {colx}, 0));
 colx_size = colx_size(1);
 
-all_x = data(table, {colx}, 0);
-
 if group
+	all_x = data(table, {colx}, 0);
 	size_allx = size(all_x);
 	size_allx = size_allx(1);
+
 	allx_labels = {};
 	allx_values = [];
 
@@ -132,6 +141,18 @@ end
 set (0, 'defaultfigurevisible', 'off');
 
 hold on;
+
+%% If there is only one x value, bar() will fail. Create two more x values before and after the unique existing x value
+size_x = size(x);
+size_x = size_x(1);
+if size_x == 1
+	x = [x - 1; x; x + 1];
+	size_y = size(y);
+	y = [zeros(size_y) y zeros(size_y)];
+
+	%% Update the xval labels fo each x values
+	
+end
 handle = bar(x, y', thickn, style);
 
 if style == 'grouped'
@@ -168,6 +189,11 @@ set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
 
 xval_size = prod(size(xval));
 if xval_size > 0
+	%% If there is only one x value, then add mockup labels for surrounding mockup x values
+	if maxi == 1
+		xval = {empty_label xval(x(2)){:} empty_label};
+		xval_size = 3;
+	end
 	if xval_size < maxi
 		error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' labels.']);
 		return
@@ -180,9 +206,19 @@ else
 			error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' data-embedded labels.']);
 			return;
 		end
-		set(gca, 'XTick', x, 'XTickLabel', alias(table, {colx}){:});
+
+		xval = alias(table, {colx}){:};
+		%% If there is only one x value, then add mockup labels for surrounding mockup x values
+		if maxi == 1
+			xval = {empty_label xval(x(2)){:} empty_label};
+		end
+		set(gca, 'XTick', x, 'XTickLabel', xval);
 	else
 		if group
+			%% If there is only one x value, then add mockup labels for surrounding mockup x values
+			if maxi == 1
+				allx_labels = {empty_label allx_labels{1} empty_label};
+			end
 			set(gca, 'XTick', x, 'XTickLabel', allx_labels);
 		end
 	end
