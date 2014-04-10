@@ -106,19 +106,20 @@ all_ref = ref(table, {colx}){:};
 size_alias = prod(size(all_alias));
 
 allx_values = data(table, {colx}, 0);
+maxx = max(all_x);
 
 %% Build the correct alias and ref vector
 %% Compute a 'grouped' x vector in case it's needed
 for i = 1:size_allx
 	allx_labels = {allx_labels{:} int2str(all_x(i))};
-
-	allx_values(allx_values == all_x(i)) = i;
+	allx_values(allx_values == all_x(i)) = maxx + i;
 
 	if size_alias > 0
 		allx_alias = {allx_alias{:} all_alias{all_x(i) + 1}};
 		allx_ref = {allx_ref{:} all_ref{all_x(i) + 1}};
 	end
 end
+allx_values -= maxx;
 
 %% If the group option is chose, switch original x vector with continuous values
 if group
