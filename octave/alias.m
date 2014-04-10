@@ -65,7 +65,7 @@ function out = alias(table, cols)
 
 	for i = 1:csize
 		if strcmp(cols{i}, '')
-			out = {out{:} table{3}{:} };
+			out = {out{:} table{3}{:}};
 		else
 			index = cellfindstr(coln(table), cols{i});
 			if index > 0

@@ -45,7 +45,9 @@
 %	}
 %	b = coln(a)
 %	b = {
+%		col1
 %		col2
+%		col3
 %		col4
 %	}
 
