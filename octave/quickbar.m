@@ -99,30 +99,34 @@ coly_size = coly_size(2);
 colx_size = size(data(table, {colx}, 0));
 colx_size = colx_size(1);
 
-if group
-	all_x = data(table, {colx}, 0);
-	size_allx = size(all_x);
-	size_allx = size_allx(1);
+%% Filter out all labels and references not used for this table
+all_x = data(table, {colx}, 0);
+size_allx = size(all_x);
+size_allx = size_allx(1);
 
-	allx_labels = {};
-	allx_alias = {};
-	allx_ref = {};
-	allx_values = [];
+allx_labels = {};
+allx_alias = {};
+allx_ref = {};
+allx_values = [];
 
-	all_alias = alias(table, {colx}){:};
-	all_ref = ref(table, {colx}){:};
-	size_alias=prod(size(all_alias));
+all_alias = alias(table, {colx}){:};
+all_ref = ref(table, {colx}){:};
+size_alias = prod(size(all_alias));
 
-	for i = 1:size_allx
-		allx_labels = {allx_labels{:} int2str(all_x(i))};
-		allx_values(i) = i;
+%% Build the correct alias and ref vector
+%% Compute a 'grouped' x vector in case it's needed
+for i = 1:size_allx
+	allx_labels = {allx_labels{:} int2str(all_x(i))};
+	allx_values(i) = i;
 
-		if size_alias > 0
-			allx_alias = {allx_alias{:} all_alias{all_x(i) + 1}};
-			allx_ref = {allx_ref{:} all_ref{all_x(i) + 1}};
-		end
+	if size_alias > 0
+		allx_alias = {allx_alias{:} all_alias{all_x(i) + 1}};
+		allx_ref = {allx_ref{:} all_ref{all_x(i) + 1}};
 	end
+end
 
+%% If the group option is chose, switch original x vector with continuous values
+if group
 	all_x = allx_values;
 end
 
@@ -134,6 +138,8 @@ for i = 1:colx_size
 	matrix_x = [matrix_x coly_x];
 	matrix = [matrix; matrix_x];
 end
+
+%% Fill aliases and references for x with the ones actually used
 table = {matrix, {colx, 'coly'} {allx_alias alias(table, {coly{1}}){:}} {allx_ref ref(table, {coly{1}}){:}} };
 coly = 'coly';
 
@@ -211,14 +217,14 @@ if xval_size > 0
 	end
 	set(gca, 'XTick', x, 'XTickLabel', xval);
 else
-	xval_size = prod(size(alias(table, {colx}){:}))
+	xval_size = prod(size(alias(table, {colx}){:}));
 	if xval_size > 0
 		if xval_size < maxi
 			error(['[quickbar][error] Have ' int2str(maxi) ' x values and ' int2str(xval_size) ' data-embedded labels.']);
 			return;
 		end
 
-		xval = alias(table, {colx}){:}
+		xval = alias(table, {colx}){:};
 		%% If there is only one real x value, remove mockup values to create only one label
 		if maxi == 1
 			x = x(2);

@@ -103,6 +103,46 @@ figure(fignum);
 
 hold on;
 
+%% Filter out all labels and references not used for this table
+all_x = data(table, {colx}, 0);
+all_x = unique(sort(all_x));
+size_allx = size(all_x);
+size_allx = size_allx(1);
+index_x = cellfindstr(coln(table), colx);
+
+allx_labels = {};
+allx_alias = {};
+allx_ref = {};
+allx_values = [];
+
+all_alias = alias(table, {colx}){:};
+all_ref = ref(table, {colx}){:};
+size_alias = prod(size(all_alias));
+
+allx_values = data(table, {colx}, 0);
+
+%% Build the correct alias and ref vector
+%% Compute a 'grouped' x vector in case it's needed
+for i = 1:size_allx
+	allx_labels = {allx_labels{:} int2str(all_x(i))};
+
+	allx_values(allx_values == all_x(i)) = i;
+
+	if size_alias > 0
+		allx_alias = {allx_alias{:} all_alias{all_x(i) + 1}};
+		allx_ref = {allx_ref{:} all_ref{all_x(i) + 1}};
+	end
+end
+
+%% If the group option is chose, switch original x vector with continuous values
+if group
+	table = apply(table, {colx}, {@setC}, allx_values);
+end
+
+%% Fill aliases and references for x with the ones actually used
+table{3}{index_x} = allx_alias;
+table{4}{index_x} = allx_ref;
+
 all_x = [];
 maxi = size(coly);
 maxi = maxi(2);
@@ -139,32 +179,6 @@ end
 
 all_x = unique(sort(all_x));
 ylim([min_value - (max_value - min_value) / y_marging, max_value + (max_value - min_value) / y_marging]);
-
-if group
-	size_allx = size(all_x);
-	size_allx = size_allx(1);
-
-	allx_labels = {};
-	allx_alias = {};
-	allx_ref = {};
-	allx_values = [];
-
-	all_alias = alias(table, {colx}){:};
-	all_ref = ref(table, {colx}){:};
-	size_alias=prod(size(all_alias));
-
-	for i = 1:size_allx
-		allx_labels = {allx_labels{:} int2str(all_x(i))};
-		allx_values(i) = i;
-
-		if size_alias > 0
-			allx_alias = {allx_alias{:} all_alias{all_x(i) + 1}};
-			allx_ref = {allx_ref{:} all_ref{all_x(i) + 1}};
-		end
-	end
-else
-	all_x = data(src, {colx}, 0);
-end
 
 % Here come the general graph settings
 g_title = title(grapht);
@@ -218,4 +232,8 @@ print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num
 hold off;
 set (0, 'defaultfigurevisible', 'on');
 	
+end
+
+function out = setC(table, coln, aux)
+	out = aux;
 end
