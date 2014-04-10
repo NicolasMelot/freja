@@ -101,19 +101,15 @@ function out = where(table, cond)
 
 		%% Extract the symbol value and check if it could be found
 		value = cellfindstr(ref(table, {column}){1}, symbol);
-		all_values = data(groupby(table, {column}, {}, {}), {column}, 0);
 		if value == 0
-			%% The symbol couldn't be resolved. We consider it refers to a values that doesn't exist
-			%% We implement it by resolving to the maximum value + 1
-			cond = regexprep(cond, [match '(\s*([+()*/>|<!&=-]|$))'], [int2str(max(all_values) + 1) '$1']);
-		else
-			value = all_values(value);
-		
-			match = strrep(match, '{', '\{');
-			match = strrep(match, '}', '\}');
-			match = strrep(match, '^', '\^');
-			cond = regexprep(cond, [match '(\s*([+()*/>|<!&=-]|$))'], [int2str(value) '$1']);
+			error(['Cannot resolve symbol ''' match '''.']);
 		end
+		value = value - 1;
+		
+		match = strrep(match, '{', '\{');
+		match = strrep(match, '}', '\}');
+		match = strrep(match, '^', '\^');
+		cond = regexprep(cond, [match '(\s*([+()*/>|<!&=-]|$))'], [int2str(value) '$1']);
 	end
 
 	%% Part 2: Resolve line index for each variable
@@ -145,57 +141,9 @@ function out = where(table, cond)
 	%% Use the truth table to address the matrix
 	out{1} = table{1}(find(truth), :);
 
-	%% Take out all aliases and references not used anymore
-	%% safe column name to store a column telling if a line is selected or not
-	where_truth = '__where_truth__';
-
-	%% Build the same table with the truth column
-	test = table;
-	test{1} = [table{1} truth];
-	test{2} = {test{2}{:} where_truth};
-	test{3} = {test{3}{:} {}};
-	test{4} = {test{4}{:} {}};
-
-	%% Take all columns, old aliases and references and initialize the new ones	
-	all_col = coln(table);
-	size_cols = size(all_col);
-	size_cols = size_cols(2);
-	new_alias = {};
-	new_ref = {};
-	old_alias = alias(table, {''});
-	old_ref = ref(table, {''});
-
-	%% Iterate through columns in input table
-	for i = 1:size_cols
-		%% Initialize a new alias and ref cell for this column
-		new_alias = {new_alias{:} {}};
-		new_ref = {new_ref{:} {}};
-
-		%% No need to do anything if there is no alias (and consequently no reference) for this column
-		if prod(size(old_alias{i})) > 0
-			col = all_col{i};
-			%% Keep only this column and the truth table; group by on the column name, reduce the truth by sum.
-			%% If any occurrence of this culoumn value matches a line that is kept, then the sum is strictly higher 
-			%% than 0. Otherwise it is 0.
-			tmp = data(groupby(test, {col}, {where_truth}, {@sum}), {col, where_truth}, 0);
-		
-			%% Compute the number of different values in this column
-			size_val = size(tmp);
-			size_val = size_val(1);
-			for j = 1:size_val
-				%% If that value must be kept
-				if tmp(j, 2) != 0
-					%% Add its reference and alias to the new alias set
-					new_alias{i} = {new_alias{i}{:} old_alias{i}{j}};
-					new_ref{i} = {new_ref{i}{:} old_ref{i}{j}};
-				end
-			end
-		end
-	end
-
 	%% Return column names and value aliases as they came
 	out{2} = table{2};
-	out{3} = new_alias;
-	out{4} = new_ref;
+	out{3} = table{3};
+	out{4} = table{4};
 end
 
