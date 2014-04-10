@@ -85,19 +85,47 @@ function out = setalias(table, cols, aliases)
 		if index > 0
 			alias_out{index} = aliases{i};
 
+			%% See if we have a reference list for this column. If not, make one up from alias with not space, exponent, index or curly braces and set the corresponding values to a linear integer index
 			if prod(size(ref_out{index})) == 0
+				%% Compute a reference
 				size_alias = size(aliases{i});
 				size_alias = size_alias(2);
 				ref_out{index} = {};
 				for j = 1:size_alias
-					ref_out{index}{j} = strrep(strrep(strrep(strrep(strrep(aliases{i}{j}, '^', ''), '{', ''), '}', ''), '_', ''), ' ', '_');
+					ref_out{index} = {ref_out{index}{:} strrep(strrep(strrep(strrep(strrep(aliases{i}{j}, '^', ''), '{', ''), '}', ''), '_', ''), ' ', '_')};
 				end
+
+				%% Transform the data to linear integers indices indexing aliases and references
+				%% Get all values as they are so far
+				colx = cols{i};
+				allx_values = data(table, {colx}, 0);
+				all_x = data(table, {colx}, 0);
+				all_x = unique(sort(all_x));
+
+				%% Get how many values we have, and the max value so we can make sure no value gets transformed twice
+				size_allx = size(all_x);
+				maxx = ceil(max(all_x));
+
+				%% Build the correct alias and ref vector
+				%% Compute a 'grouped' x vector in case it's needed
+				for i = 1:size_allx
+					%% Replace all values by i + maxx, so the new value is guaranteed to be different than any other
+					allx_values(allx_values == all_x(i)) = maxx + i;
+				end
+				%% Substract maxx so we get integers again
+				allx_values -= maxx + 1;
+				table = apply(table, {colx}, {@setC}, allx_values);
 			end
 		else
 			error(['Cannot find column ''' cols{i} '''.']);
 		end
 	end
 
+	out{1} = table{1};
 	out{3} = alias_out;
 	out{4} = ref_out;
+end
+
+function out = setC(table, coln, aux)
+	out = aux;
 end
