@@ -83,7 +83,7 @@ function out = where(table, cond)
 
 	%% Part 1: find and replace all aliases with their value
 	%% Find all occurrence of the form (simplified) bla bla bla::hello or bla bla bla::45 
-	aliases = regexp(cond, '([\w_{}^.]|[\w_{}^.][\w\d_{,}^.]|[\w_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])::([\w\d_{}^.]|[\w\d_{}^.][\w\d_{,}^.]|[\w\d_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])\s*([()&|<>=!+-/*]|$)', 'match');
+	aliases = regexp(cond, '([\w_{}^.]|[\w_{}^.][\w\d_{,}^.]|[\w_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])::([\w\d_{}^.]|[\w\d_{}^.][\w\d_{,}^.]|[\w\d_{}^.][ \w\d_{,}^.]+[\w\d_{,}^.])\s*([()&|<>=!+/*-]|$)', 'match');
 
 	%% Resolve the value for each alias
 	alias_size = size(aliases);
@@ -113,7 +113,7 @@ function out = where(table, cond)
 	end
 
 	%% Part 2: Resolve line index for each variable
-	variables = regexp(cond, '([a-zA-Z_{}]|[a-zA-Z_{}][0-9,a-zA-Z_{}.^]|[a-zA-Z_{}][0-9, a-zA-Z_{}.^]+[0-9,a-zA-Z_{}.^])\s*([()&|<>=!+-/*]|$)', 'match');
+	variables = regexp(cond, '([a-zA-Z_{}]|[a-zA-Z_{}][0-9,a-zA-Z_{}.^]|[a-zA-Z_{}][0-9, a-zA-Z_{}.^]+[0-9,a-zA-Z_{}.^])\s*([()&|<>=!+/*i-]|$)', 'match');
 
 	%% Resolve the value for each variable
 	variable_size = size(variables);
