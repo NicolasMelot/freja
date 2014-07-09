@@ -140,14 +140,36 @@ merge_dir()
 	done
 	echo -e $DATA_END >> $output_file
 
+        ## If there is no compilation setting, just let the running settings go once
+	local compile_instances=`count_args ${compile[@]}`
+	local dummy_compile=0
+	#echo [$0:$LINENO] $compile_instances >&2
+	#echo [$0:$LINENO] ${compile[0]}=\"`eval echo '$'${compile[0]}`\" >&2
+        if [ "$compile_instances" == "0" ]
+        then
+                compile_instances=1
+                eval ${compile[0]}=1
+                dummy_compile=1
+        fi
+
 	## Output column names to file
 	echo -e $COLUMNS_BEGIN >> $output_file
-	echo ${compile[@]}\ ${run[@]}\ $output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | while read line; do echo -en \'$line\'\ | tr _ ' ' | tr '~' '_'; done >> $output_file
+	if [ "$dummy_compile" == "0" ]
+	then
+		echo ${compile[@]}\ ${run[@]}\ $output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | while read line; do echo -en \'$line\'\ | tr _ ' ' | tr '~' '_'; done >> $output_file
+	else
+		echo ${run[@]}\ $output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | while read line; do echo -en \'$line\'\ | tr _ ' ' | tr '~' '_'; done >> $output_file
+	fi
 	echo -e $COLUMNS_END >> $output_file
 
 	## Output value symbols to file
 	echo -e $SYMB_BEGIN >> $output_file
-	local variable="${compile[@]} ${run[@]} $output_columns"
+	if [ "$dummy_compile" == "0" ]
+	then
+		local variable="${compile[@]} ${run[@]} $output_columns"
+	else
+		local variable="${run[@]} $output_columns"
+	fi
 	eval variable=\($variable\)
 	local variable_size=${#variable[@]}
 
@@ -209,7 +231,12 @@ merge_dir()
 
 	## Output value reference to file
 	echo -e $REF_BEGIN >> $output_file
-	local variable="${compile[@]} ${run[@]} $output_columns"
+	if [ "$dummy_compile" == "0" ]
+	then
+		local variable="${compile[@]} ${run[@]} $output_columns"
+	else
+		local variable="${run[@]} $output_columns"
+	fi
 	eval variable=\($variable\)
 	local variable_size=${#variable[@]}
 
@@ -248,6 +275,12 @@ merge_dir()
 		fi
 	done >> $output_file
 	echo -e $REF_END >> $output_file
+
+	## If there was no real compile setting, reset the value to nothing
+	if [ "$dummy_compile" == "1" ]
+        then
+		eval ${compile[0]}=
+	fi
 }
 
 compile()
@@ -317,6 +350,15 @@ batch()
 {
 	local run_instances=`count_args ${run[@]}`
 	local compile_instances=`count_args ${compile[@]}`
+        local dummy_compile=0
+
+        ## If there is no compilation setting, just let the running settings go once
+        if [ "$compile_instances" == "0" ]
+        then
+                compile_instances=1
+                eval ${compile[0]}=1
+                dummy_compile=1
+        fi
 	local total_instances=$(($run_instances * $compile_instances))
 
         ## Do not do anything if there is no instance to compile or run
@@ -342,12 +384,23 @@ batch()
 	do
 		local run_counter=1
 		local run_success=0
-		local flags_index=`index_seq compile $flags`
+                if [ "$dummy_compile" == "0" ]
+                then
+                        local flags_index=`index_seq compile $flags`
+                else
+                        local flags_index=
+                        flags=
+                fi
 
 		while read args
 		do
 			local instance_number=$((compile_counter * $run_instances + $run_counter))
-			info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
+if [ "$dummy_compile" == "0" ]
+                        then
+				info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
+                        else
+				info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
+                        fi
 			local instance_start=`date +%s`
 			local args_index=`index_seq run $args`
 			local basename=${output_base}_${instance_number}
@@ -426,6 +479,12 @@ batch()
 		local batch_outcome="Success"
 	else
 		local batch_outcome="Failed"
+	fi
+
+	## If there was no real compile setting, reset the value to nothing
+	if [ "$dummy_compile" == "1" ]
+        then
+		eval ${compile[0]}=
 	fi
 
 	local stop_time=`date +%s`

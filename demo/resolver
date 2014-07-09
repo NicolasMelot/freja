@@ -43,6 +43,7 @@ index()
 	# $2 is variable value we want to get index of
 	local variable=$1
 	local value=$2
+	local i=0
 
 	## Load the content of variable files
 	. ./variables
@@ -85,6 +86,7 @@ index()
 		final_i=0
 		for i in `seq 0 $(($size - 1))`
 		do
+			#echo [DEBUG][$0:$LINENO] Is my value \($value\) the same as the $i'th' element of alias_var=\"${ref_var[@]}\" \(${ref_var[$i]}\) >&2
 			if [ "$value" == "${ref_var[$i]}" ]
 			then
 				## return the index value requested
@@ -103,8 +105,17 @@ index()
 					cat /tmp/ref.$$.tmp > references
 					rm /tmp/ref.$$.tmp
 				fi
-				local new_symb=`echo symb_$variable=\"$(echo ${symb_var[@]})`\"
-				echo $new_symb >> references
+				echo -n symb_$variable'=" ' >> references
+				for j in `seq 0 $((${#ref_var[@]} - 1))`
+				do
+					if [ "${symb_var[$j]}" == "" ]
+					then
+						echo -n "'' " >> references
+					else
+						echo -n ${symb_var[$j]}" " >> references
+					fi
+				done
+				echo '"' >> references
 
 				## Return from the function
 				return 0
@@ -119,28 +130,47 @@ index()
 		echo $i
 
 		## Add this new value to the reference list
-		local new_ref=`echo ref_$variable=\"$(echo ${ref_var[@]} $value)`\"
-		if [ "${alias_var[$value_index]}" == "" ]
+		if [ "${symb_var[$i]}" == "" ]
 		then
-			new_symb=$value
-		else
-			new_symb=${alias_var[$value_index]}
+			symb_var[$i]=$value
 		fi
-		local new_symb=`echo symb_$variable=\"$(echo ${symb_var[@]} $new_symb)`\"
+		ref_var[$i]=$value
+
 		if [ -f references ]
 		then
 			cat references | grep -Ev '^(ref|symb)_'$variable= > /tmp/ref.$$.tmp
 			cat /tmp/ref.$$.tmp > references
 			rm /tmp/ref.$$.tmp
 		fi
-		echo $new_ref >> references
-		echo $new_symb >> references
+		
+		echo -n symb_$variable'=" ' >> references
+		for j in `seq 0 $((${#ref_var[@]} - 1))`
+		do
+			if [ "${symb_var[$j]}" == "" ]
+			then
+				echo -n "'' " >> references
+			else
+				echo -n ${symb_var[$j]}" " >> references
+			fi
+		done
+		echo '"' >> references
+
+		echo -n ref_$variable'=" ' >> references
+		for j in `seq 0 $i`
+		do
+			if [ "${ref_var[$j]}" == "" ]
+			then
+				echo -n $value" " >> references
+			else
+				echo -n ${ref_var[$j]}" " >> references
+			fi
+		done
+		echo '"' >> references
 	else
 		echo $value
 
 		if [ -f references ]
 		then
-			echo -n
 			cat references | grep -Ev '^(ref|symb)_'$variable= > /tmp/ref.$$.tmp
 			cat /tmp/ref.$$.tmp > references
 			rm /tmp/ref.$$.tmp

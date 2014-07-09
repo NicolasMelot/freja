@@ -53,10 +53,10 @@ function y = cellfindstr(cell, str)
 	cell_size = size(cell);
 	cell_size = cell_size(2);
 
-	y = 0;
-	for i = 1:cell_size
-		if(strcmp(cell{1, i}, str) == 1)
-			y = i;
-		end
+	if cell_size > 0
+		tf = ismember(cell, str);
+		y = sum(tf .* (1:cell_size));
+	else
+		y = 0;
 	end
 end
