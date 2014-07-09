@@ -253,6 +253,13 @@ merge_dir()
 compile()
 {
 	local total_instances=`count_args ${compile[@]}`
+
+        ## Do not do anything if there is no instance to compile
+        if [ "$total_instances" == "0" ]
+        then
+                exit 0
+        fi
+
 	info Will compile $total_instances settings
 
 	local compile_counter=1
@@ -311,6 +318,12 @@ batch()
 	local run_instances=`count_args ${run[@]}`
 	local compile_instances=`count_args ${compile[@]}`
 	local total_instances=$(($run_instances * $compile_instances))
+
+        ## Do not do anything if there is no instance to compile or run
+        if [ "$total_instances" == "0" ]
+        then
+                exit 0
+        fi
 
 	info Will run $total_instances instances
 

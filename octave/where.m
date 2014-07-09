@@ -135,6 +135,12 @@ function out = where(table, cond)
 		cond = regexprep(cond, [match '(\s*([+()*/>|<!&=-]|$))'], ['table{1}(:, ' int2str(index) ')$1']);
 	end
 
+	%% Make sure that the condition checks something on the matrix
+	if strcmp(strtrim(cond), '')
+		cond = '1';
+	end
+	cond = ['(table{1}(:, 1) >= 0 | table{1}(:, 1) <= 0) & ' cond];
+
 	%% Produce a truth table from the condition synthetized in step 2
 	truth = eval(cond);
 

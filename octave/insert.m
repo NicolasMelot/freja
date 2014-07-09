@@ -27,6 +27,11 @@
 %	table:	The matrix to which (table).
 %	matrix:	matrix to insert to the table. The matrix should have as many
 %		columns as the matrix has column names.
+%	names:	Names of the new columns (cell of strings)
+%	symbols:String symbols for each value in the corresponding new column
+%		(Cell of Cells of string).
+%	aliaes:	String aliases for each new symbol for each new column
+%		(Cell of cells of strings).
 %	out:	The table from merged data (table)
 %
 %	Example:
@@ -52,7 +57,7 @@
 %		7 7 8 2
 %		4 5 3 2
 %	]
-%	b = insert(a, matrix)
+%	b = insert(a, matrix, names, symbols, aliases)
 %	b = {
 %	      [1,1] =
 %		7 7 8 2
@@ -74,12 +79,12 @@
 %             [1,4] = {{}(0x0) {}(0x0) {}(0x0) {}(0x0)}
 %	}
 
-function out = insert(table, matrix)
+function out = insert(table, matrix, names, symbols, aliases)
 	check(table);
-	out{1} = [table{1}; matrix];
-	out{2} = table{2};
-	out{3} = table{3};
-	out{4} = table{4};
+	out{1} = [table{1} matrix];
+	out{2} = {table{2}{:} names{:}};
+	out{3} = {table{3}{:} symbols{:}};
+	out{4} = {table{4}{:} aliases{:}};
 end
 
 
