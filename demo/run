@@ -26,6 +26,20 @@ nb_threads=$2
 count=$3
 try=$4
 
+case "$nb_threads" in
+	"seq.")
+		nb_threads=0
+	;;
+	"over.")
+		nb_threads=1
+	;;
+	*)
+		:
+		#echo Unknown string for nb_threads: \"$nb_threads\" >&2
+		#exit 1
+	;;
+esac
+
 ./program-$entropy-$nb_threads $count
 
 exit $?

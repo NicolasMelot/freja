@@ -57,7 +57,36 @@ error()
 
 usage()
 {
-	echo ./start \[compile\|run\] \<experiment\>
+	echo 
+	echo
+	echo './start [compile | run] <experiment> [--instance-name <instance name>]'
+	echo '	[--retry [[--number | -n <numbers>] | [--pattern | -p <expression>] | --all] [--retry-only]]'
+	echo
+	echo "	<experiment>	Space-free, filename-valid string that name a category of the experiment batch being run."
+	echo "				The results of all batches of the same category are merge together without any"
+	echo "				data to differentiate them. Several experiments of the same category may be run"
+	echo "				to generating more data."
+	echo "	<instance name>	Space-free, filename-valid string to name a duplication of an experiment within an experiment"
+	echo "				category. Current day, and time as obtain by \"'date|tr ' ' _|tr : -\" by default."
+	echo "				If no name is given, continues the experiment duplicate previously interrupted, or"
+	echo "				begin a new one with a default name. Depending on options, all running instances of an"
+	echo "				experiment duplicate are not run again unless their previous run failed."
+	echo '	--retry		Run again an experiment duplicate (or any previous duplicate previously  interrupted) but filters'
+	echo '				the running instances after some filter given by one of the options --numbers or --pattern'
+	echo '	--number	With --retry, expects <numbers>, a list of running instance numbers as given by any batch output'
+	echo '				which will be run again even if they alread succeed in a previous run'
+	echo "	<number>	Space separated instance numbers to run again as given by a previous run. If more than"
+	echo "				one number, they should be protected with simple or double quotes \(\"1 2 3 4\"\)."
+	echo '	--pattern	With --retry and an <expression>, run again all running instances that satisfy the expression'
+	echo "	<expression>	Bash-format boolean expression that is tested against all variable combinations. If"
+	echo "				The expression returns true (the command returns 0), then this experiment instance is"
+	echo "				run again. Otherwise (the command returns an non-zero value) this instance is not run."
+	echo "				you can use the function match(<variable>, <regex>) that return true if the sed regular"
+	echo "				expression <regex> matches the value of the variable <variable> and false otherwise."
+	echo '	--retry-only		Only re-run the running instances requested by --numbers or --pattern options. Otherwise'
+	echo '				run also all running instances that previously failed or were never run.'
+	echo 
+	echo "	For more information: https://www.ida.liu.se/~nicme26"
 }
 
 cut_head()
@@ -75,20 +104,26 @@ get_date_filename()
 	date|tr ' ' _|tr : -
 }
 
-build_args()
+build_values()
 {
-	# $1 is the variable containing the list of variables to be listed
 	local myvars=
 	local next_step=
 	eval myvars=\(`echo $@`\)
 	eval next_step=`cut_head ${myvars[@]}`
 	local var=${myvars[0]}
 
-	for val in `eval echo \$\{$var\[\@\]\}`
+	var=`eval echo \$\{$var\[\@\]\}`
+	for val in ${var[@]}
 	do
+		## If var is not a numeric variable, then surround its value with double quotes
+		if ! is_number_seq ${var[@]}
+		then
+			val=\"$val\"
+		fi
+
 		if [ "x$#" != "x1" ];
 		then
-			build_args ${next_step[@]}|while read line
+			build_values ${next_step[@]}|while read line
 			do
 				echo $val $line
 			done
@@ -96,6 +131,11 @@ build_args()
 			echo $val
 		fi
 	done
+}
+
+build_args()
+{
+	build_values $@ | tr -d '"'
 }
 
 count_args()
@@ -111,6 +151,16 @@ count_args()
 	echo $arg_count
 }
 
+double_quotes()
+{
+	tr \\\t ' '|tr -s ' '|xargs echo|sed 's/ /","/g'|sed 's/^/"/g'|sed 's/$/"/g'
+}
+
+commas()
+{
+	sed 's/"/"\\\\\"/g'|while read i; do :(){ for i in "$@"; do echo -n $i,; done|sed 's/,$/\n/g'; }; eval : $i; done
+}
+
 merge_dir()
 {
 	local output_file="$1"
@@ -118,13 +168,8 @@ merge_dir()
 
 	info Merging all results to $output_file
 
-	if [ -f references ]
-	then
-		. ./references
-	fi
-
-	## Output data to file
-	echo -e $DATA_BEGIN > $output_file
+	## Take all column name and double quote them
+	echo ${compile[@]} ${run[@]} $output_columns | double_quotes > $output_file
 	while [ "$#" != "0" ]
 	do
 		local input_dir=$1
@@ -132,155 +177,22 @@ merge_dir()
 		## Process this argument only if it is a directory
 		if [ -d $input_dir ]
 		then
-			echo % From $input_dir >> $output_file
-			ls $input_dir/${output_base}_*_{$output_success,$output_failure}* 2> /dev/null | sort -V | xargs cat | tr \\\t ' ' | tr -s ' ' >> $output_file
+			local counter=1
+			while read flags
+			do
+				while read args
+				do
+					filename=$input_dir/${output_base}_${counter}_${output_success}${output_extension}
+					if [ -f ${filename} ]
+					then
+						cat $filename | tail -n +2 | sed "s/^/`echo $flags $args|commas`,/g" >> $output_file
+					fi
+				done < <(build_values ${run[@]})
+			done < <(build_values ${compile[@]})
 		fi
 	
 		shift
 	done
-	echo -e $DATA_END >> $output_file
-
-        ## If there is no compilation setting, just let the running settings go once
-	local compile_instances=`count_args ${compile[@]}`
-	local dummy_compile=0
-	#echo [$0:$LINENO] $compile_instances >&2
-	#echo [$0:$LINENO] ${compile[0]}=\"`eval echo '$'${compile[0]}`\" >&2
-        if [ "$compile_instances" == "0" ]
-        then
-                compile_instances=1
-                eval ${compile[0]}=1
-                dummy_compile=1
-        fi
-
-	## Output column names to file
-	echo -e $COLUMNS_BEGIN >> $output_file
-	if [ "$dummy_compile" == "0" ]
-	then
-		echo ${compile[@]}\ ${run[@]}\ $output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | while read line; do echo -en \'$line\'\ | tr _ ' ' | tr '~' '_'; done >> $output_file
-	else
-		echo ${run[@]}\ $output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | while read line; do echo -en \'$line\'\ | tr _ ' ' | tr '~' '_'; done >> $output_file
-	fi
-	echo -e $COLUMNS_END >> $output_file
-
-	## Output value symbols to file
-	echo -e $SYMB_BEGIN >> $output_file
-	if [ "$dummy_compile" == "0" ]
-	then
-		local variable="${compile[@]} ${run[@]} $output_columns"
-	else
-		local variable="${run[@]} $output_columns"
-	fi
-	eval variable=\($variable\)
-	local variable_size=${#variable[@]}
-
-	seq 0 $(($variable_size - 1)) | tr ' ' \\\n | while read i
-	do
-		local symb=symb_${variable[$i]}
-		eval symb=\('$'$symb\)
-		local symb_size=${#symb[@]}
-
-		local ref=ref_${variable[$i]}
-		eval ref=\('$'$ref\)
-		local ref_size=${#ref[@]}
-
-		if (( $symb_size > 0 )) && (( $ref_size > 0 ))
-		then
-			echo -n "{"
-			for i in ${symb[@]}
-			do
-				echo -n \'$i\'\  
-			done
-			echo -n "} "
-		else
-			## OK there was no symbol collected, but maybe there are symbols anyway
-			## for run-generated columns
-			local alias=alias_${variable[$i]}
-			eval alias=\('$'$alias\)
-			local alias_size=${#alias[@]}
-
-			if (( $alias_size > 0 ))
-			then
-			echo -n "{"
-				for i in ${alias[@]}
-				do
-					echo -n \'$i\'\  
-				done
-				echo -n "} "			
-			else
-				## Otherwise...
-				local values=${variable[$i]}
-				eval values=\('$'$values\)
-
-				if ! is_number_seq ${values[@]}
-				then
-					## If it is NOT a numeric column, then generate a row with non-numeric raw values
-					echo -n "{"
-					for i in ${values[@]}
-					do
-						echo -n \'$i\'\  
-					done
-					echo -n "} "
-				else
-					## Else generate an empty row
-					echo -n '{} '
-				fi
-			fi
-		fi
-	done | tr _ ' ' | tr '~' _ >> $output_file
-	echo -e $SYMB_END >> $output_file
-
-	## Output value reference to file
-	echo -e $REF_BEGIN >> $output_file
-	if [ "$dummy_compile" == "0" ]
-	then
-		local variable="${compile[@]} ${run[@]} $output_columns"
-	else
-		local variable="${run[@]} $output_columns"
-	fi
-	eval variable=\($variable\)
-	local variable_size=${#variable[@]}
-
-	seq 0 $(($variable_size - 1)) | tr ' ' \\\n | while read i
-	do
-		local ref=ref_${variable[$i]}
-		eval ref=\('$'$ref\)
-		local ref_size=${#ref[@]}
-
-		if (( $ref_size > 0 ))
-		then
-			echo -n "{"
-			for i in ${ref[@]}
-			do
-				echo -n \'$i\'\  
-			done
-			echo -n "} "
-		else
-			## Otherwise...
-			local values=${variable[$i]}
-			eval values=\('$'$values\)
-
-			if ! is_number_seq ${values[@]}
-			then
-				## If it is NOT a numeric column, then generate a row with non-numeric raw values
-				echo -n "{"
-				for i in ${values[@]}
-				do
-					echo -n \'$i\'\  
-				done
-				echo -n "} "
-			else
-				## Else generate an empty row
-				echo -n '{} '
-			fi
-		fi
-	done >> $output_file
-	echo -e $REF_END >> $output_file
-
-	## If there was no real compile setting, reset the value to nothing
-	if [ "$dummy_compile" == "1" ]
-        then
-		eval ${compile[0]}=
-	fi
 }
 
 compile()
@@ -346,6 +258,20 @@ compile()
 	return $compile_success
 }
 
+build_expression()
+{
+	while [[ $# > 0 ]]
+	do
+		sources="$sources $1"
+		shift
+	done
+
+	## Make sure we don't pattern match and eliminate nested parenthesis in the regular expression
+	## Example on how to match balanced and nested parenthesis: 
+	## http://stackoverflow.com/questions/14952113/how-can-i-matches-the-nested-brackets-by-regex
+	perl -i -pe 's/match\(([^,]*),(?:(\(([^()]|(?2))*\))|([^()]*))\)/echo \$line | match "$1" "$2$4"'"$sources"'/g'
+}
+
 batch()
 {
 	local run_instances=`count_args ${run[@]}`
@@ -367,8 +293,39 @@ batch()
                 exit 0
         fi
 
-	info Will run $total_instances instances
+	## If there was an expression defined to rerun only a few experiments
+	if [ "$retry_expr" != "" ]
+	then
+		## Rebuild the filtering expression for for compile and run settings
+		retry_expr=`echo $retry_expr | build_expression compile run`
 
+		## Make up the complete list of settings to run and filter them using the expression
+		retry_numbers="`while read flags
+		do
+			while read args
+			do
+				echo $flags $args
+			done < <(build_args ${run[@]})
+		done < <(build_args ${compile[@]}) | grep -n ''| while read line
+		do
+			#echo $retry_expr
+			#eval echo $retry_expr
+			#eval echo $retry_expr
+			#echo $?
+			eval 'if' $retry_expr '
+			then
+				echo $line
+			fi'
+		done | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+	fi
+
+	if [ "$retry_only" != "1" ]
+	then
+		info Will run $total_instances instances
+	else
+		info Will run `echo $retry_numbers|wc -w` instances
+	fi
+	
 	# Initialize output file
 	local start_time=`date +%s`
 	local output_dir=$experiment/$output_dir_current
@@ -384,53 +341,53 @@ batch()
 	do
 		local run_counter=1
 		local run_success=0
-                if [ "$dummy_compile" == "0" ]
+                if [ "$dummy_compile" != "0" ]
                 then
-                        local flags_index=`index_seq compile $flags`
-                else
-                        local flags_index=
                         flags=
                 fi
 
 		while read args
 		do
 			local instance_number=$((compile_counter * $run_instances + $run_counter))
-if [ "$dummy_compile" == "0" ]
+			if [ "$retry_only" != "" ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$instance_number$`" == "" ]
+			then
+				run_counter=$(($run_counter + 1))
+				continue
+			fi
+			if [ "$dummy_compile" == "0" ]
                         then
 				info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $flags|cut -d ' ' -f $(($i + 1))) "; done``for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
                         else
 				info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
                         fi
 			local instance_start=`date +%s`
-			local args_index=`index_seq run $args`
+			#local args_index=`index_seq run $args`
 			local basename=${output_base}_${instance_number}
 
 			## Only run this experiment if there is no output for this one
-			if [ -f $output_dir/${basename}_$output_success ]
+			if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$instance_number$`" == "" ]
 			then
 				local outcome="Skipped"
 				local skipped=$(($skipped + 1))
 			else
-				touch $output_dir/${basename}_$output_progress
+				## Output the experiment output header
+				## Reduces tabs and spaces to a single space, turn them to commas and frame them with double quotes
+				echo $output_columns | double_quotes > $output_dir/${basename}_$output_progress$output_extension
 				bash ./run $flags $args | while read line;
 				do
-					local content=`echo $line | tr \\\t ' ' | tr -s ' ' | xargs echo`
-					if [ "x`echo $content|grep ^%`" == "x" ]; then
-						echo $flags_index $args_index $content >> $output_dir/${basename}_$output_progress
-					else
-						echo $line >> $output_dir/${basename}_$output_progress
-					fi
+					## Replace single quotes with double quotes, insert commas between fields
+					echo $line | commas >> $output_dir/${basename}_$output_progress$output_extension
 				done
 
 				local success=${PIPESTATUS[0]}
 				if [ "x$success" == "x0" ]; then
 					local outcome="OK"
-					mv $output_dir/${basename}_$output_progress $output_dir/${basename}_$output_success
+					mv $output_dir/${basename}_$output_progress$output_extension $output_dir/${basename}_$output_success$output_extension
 				else
 					local outcome="Failed"
 					## Annotate output as failed
 					## Create a numeric suffix in case of successive failures
-					local num=`ls $output_dir/${basename}_${output_failure}* 2> /dev/null | wc -l`
+					local num=`ls $output_dir/${basename}_${output_failure}*$output_extension 2> /dev/null | wc -l`
 					if [ "$num" == "0" ]
 					then
 						num=""
@@ -438,12 +395,7 @@ if [ "$dummy_compile" == "0" ]
 						num=_$num
 					fi
 
-					echo % $failed_begin > $output_dir/${basename}_${output_failure}$num
-					cat $output_dir/${basename}_${output_progress} | while read line_fail; do
-						echo % $line_fail >> $output_dir/${basename}_${output_failure}$num
-					done
-					echo % $failed_end >> $output_dir/${basename}_${output_failure}$num
-					rm $output_dir/${basename}_$output_progress
+					mv $output_dir/${basename}_${output_progress}$output_extension $output_dir/${basename}_${output_failure}$num$output_extension
 
 					run_success=1
 				fi
@@ -495,8 +447,112 @@ if [ "$dummy_compile" == "0" ]
 	return $batch_success
 }
 
+match()
+{
+	local variable="$1"
+	local expression="$2"
+	shift 2
+
+	if [ "$expression" == "" ]
+	then
+		expression=".*"
+	fi
+
+	while [[ $# > 0 ]]
+	do
+		local vars="$vars "'${'"$1"'[@]} '
+		shift
+	done
+	local index=`eval echo $vars | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -n ^$variable$ | cut -f 1 -d :`
+
+	read line
+	if [ "`echo $line|cut -f $index -d ' '|sed '/'"$expression"'/!d'`" != "" ]
+	then
+		return 0
+	else
+		return 1
+	fi
+}
+
+parse_options()
+{
+	while [[ $# > 0 ]]
+	do
+		case "$1" in
+			"--retry")
+				shift
+				case "$1" in
+					"--pattern" | "-p")
+						shift
+						retry_expr="$1"
+
+					;;
+					"--number" | "-n")
+						shift
+						retry_numbers="$1"
+					;;
+					"--all" | "-a")
+						retry_expr='/bin/true' ## An expression that returns true for all experiments
+					;;
+					"")
+						## If an empty parameter for the filtering method manages to reach here,
+						## Let it go, do nothing and catch the error later
+						:
+					;;
+					*)
+						error Unknown experiment description method: \"$1\"
+						usage
+						exit 1
+					;;
+				esac
+
+				## If no filtering option was given, give an error message and exit
+				if [ "$retry_expr" == "" ] && [ "$retry_numbers" == "" ]
+				then
+					error You must specify a list of instances to run again
+					usage
+					exit 1
+				fi
+			;;
+			"--retry-only")
+				if [ "$retry_numbers" == "" ] && [ "$retry_expr" == "" ]
+				then
+					error Attempting to retry only an experiment list without defining it
+					usage
+					exit 1
+				else
+					retry_only=1
+				fi
+			;;
+			"--instance")
+				shift
+				instance_name="`basename $1`"
+
+				if [ -d $experiment/$instance_name ]
+				then
+					if [ -d $experiment/current ]
+					then
+						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/current and try again
+						exit 1
+					else
+						mv $experiment/`basename $1` $experiment/current	
+					fi
+				fi
+			;;
+			*)
+				error Unknown option: $1
+				usage
+				exit 1
+			;;
+		esac
+
+		## Get to next argument
+		shift
+	done
+}
+
 operation=$1
-experiment=$2
+shift
 
 echo -n "" > $logfile
 
@@ -507,6 +563,11 @@ case "x$operation" in
 	;;
 
 	"xrun")
+		experiment=$1
+		shift
+
+		eval parse_options `for i in "$@"; do printf "\"%s\" " "$i"; done; echo`
+
 		if [ "x$experiment" == "x" ];
 		then
 			error You must name the experiment to be run
@@ -518,7 +579,12 @@ case "x$operation" in
 			
 			if [ "$batch_success" == "0" ]
 			then
-				filename=`get_date_filename`
+				if [ "$instance_name" = "" ]
+				then
+					filename=`get_date_filename`
+				else
+					filename=$instance_name
+				fi
 				mv $experiment/$output_dir_current $experiment/$filename
 			else
 				filename=$output_dir_current
@@ -532,6 +598,11 @@ case "x$operation" in
 	;;
 
 	"xmerge")
+		experiment=$1
+		shift
+
+		parse_options $@
+
 		if [ "x$experiment" == "x" ];
 		then
 			error You must name the experiment to be merged

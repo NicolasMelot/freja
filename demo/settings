@@ -32,6 +32,7 @@ passed_file=$temp/pid.$$.passed
 data=$table_name
 ext=.m
 output_dir_current=current
+output_extension=.csv
 output_success=success
 output_failure=failure
 output_progress=progress

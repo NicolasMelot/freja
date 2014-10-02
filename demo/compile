@@ -18,12 +18,23 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## Load tools to convert string values to index (index <variable> <value>) or the reverse operation (value <variable> <index>)
-. ./resolver
-
 entropy=$1
 nb_threads=$2
 
-make ENTROPY=$entropy NB_THREADS=`index nb_threads $nb_threads` SUFFIX=-$entropy-$nb_threads
+case "$nb_threads" in
+	"seq.")
+		nb_threads=0
+	;;
+	"over.")
+		nb_threads=1
+	;;
+	*)
+		:
+		#echo Error: unknown nb_threads value: \"$nb_threads\" >&2
+		#exit 1
+	;;
+esac
+
+make ENTROPY=$entropy NB_THREADS=$nb_threads SUFFIX=-$entropy-$nb_threads
 
 exit $?

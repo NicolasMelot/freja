@@ -37,7 +37,7 @@ is_number_seq()
 ## Save the symbolic values and alias in the file "references" to prevent the use of the same index for a different
 ## variable value, accross different batch runs
 ## If the string is a numeric value coming from a numeric sequence, then return the same numeric string
-index()
+deprecated_index()
 {
 	# $1 is variable name
 	# $2 is variable value we want to get index of
@@ -179,7 +179,7 @@ index()
 }
 
 ## returns the string value corresponding to the index in a variable from the variables file
-value()
+deprecated_value()
 {
 	local variable=$1
 	local index=$2
@@ -193,7 +193,7 @@ value()
 }
 
 ## Transforms each value in the input sequence into its index equivalent according to variable sequence given in category
-index_seq()
+deprecated_index_seq()
 {
 	local category=$1
 

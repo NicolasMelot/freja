@@ -30,7 +30,7 @@
 ## Compile-time settings
 compile=(entropy nb_threads)
 entropy="0.4"				# Randomness in the calculation time
-nb_threads="seq. over. `seq 2 8`"
+nb_threads="seq. over. `seq 2 4`"
 
 ## Run-time settings
 run=(count try)
@@ -38,7 +38,7 @@ count="100000000 200000000"		# amount of data to be written to main memory
 try=`seq 1 2`				# Number of different run per setting
 
 ## Run-time data
-output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec"
+output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec comment1 comment2"
 
 ## Aliases for each variable to display in plots. *Must* be consistent with variables above, but there can be more values (ignored)
 alias_count="10^{8} 2_10^8"

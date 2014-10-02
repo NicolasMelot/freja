@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <math.h>
 
 /* to be defined at compile-time:
  * NB_THREADS
@@ -154,19 +155,20 @@ main(int argc, char ** argv)
 #if NB_THREADS > 0
   for (i = 0; i < NB_THREADS; i++)
     {
-      printf("%i %i %li %i %li %i %li %i %li\n", i + 1, (int) start.tv_sec,
+      printf("%i %i %li %i %li %i %li %i %li \"hello \" \" 'world\"\n", i + 1, (int) start.tv_sec,
           start.tv_nsec, (int) stop.tv_sec, stop.tv_nsec,
           (int) thread_start[i].tv_sec, thread_start[i].tv_nsec,
           (int) thread_stop[i].tv_sec, thread_stop[i].tv_nsec);
     }
 #else
-  printf("%i %i %li %i %li %i %li %i %li\n", 0, (int)start.tv_sec, start.tv_nsec,
+  printf("%i %i %li %i %li %i %li %i %li \"sequential \" \" 'version\"\n", 0, (int)start.tv_sec, start.tv_nsec,
       (int)stop.tv_sec, stop.tv_nsec,
       (int)thread_start.tv_sec, thread_start.tv_nsec,
       (int)thread_stop.tv_sec, thread_stop.tv_nsec);
 #endif
 #endif
 
-  // Always report a successful experiment
-  return 0;
+  // Simulate occasional running failures
+  srand(time(NULL));
+  return !(random() % 6);
 }

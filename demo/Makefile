@@ -24,7 +24,7 @@ ENTROPY=0.01
 SUFFIX=
 
 CFLAGS=-g -O0 -Wall -DMEASURE -DNB_THREADS=$(NB_THREADS) -DENTROPY=$(ENTROPY)
-LDFLAGS=-lrt -pthread
+LDFLAGS=-lrt -pthread -lm
 
 TARGET=program$(SUFFIX)
 
