@@ -45,13 +45,11 @@ alias_count="10^{8} 2_10^8"
 alias_thread="SEQ Thread_1 Thread_2 Thread_3 Thread_4 Thread_5 Thread_6 Thread_7 Thread_8"
 alias_try="1 2 3 4 5 6 7 8 9 10"
 
-## Known experiment names. Useful when merging different experiment and make sure no two experiments
-## merged at different time gets the same value in the final table record.
-experiment="none setting1 setting2"
-
 ## Assume there are other possibles values already used in previous experiments but not in this one (ref_*). These past values also have aliases (symb_*. A list is automatically generated to the files "references" merging these values and the ones givens in varaibles above.
 ref_count="10000000 50000000"
 symb_count="10^5 5_10^7"
 
 ## You can also define references for values the program tested generate
 ref_thread="SEQ Thread_1 Thread_2 Thread_3 Thread_4 Thread_5 Thread_6 Thread_7 Thread_8"
+
+restrict='! ( match(try,^2$) && match(nb_threads,^2$) )'

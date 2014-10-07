@@ -1,11 +1,5 @@
 #!/bin/bash
 
-## Load global settings
-. ./settings
-
-## Load experiment variable data
-. ./variables
-
 ## Load functions to resolve aliases
 . ./resolver
 
@@ -182,7 +176,7 @@ merge_dir()
 			do
 				while read args
 				do
-					filename=$input_dir/${output_base}_${counter}_${output_success}${output_extension}
+					filename=$input_dir/${output_base}_$(echo $flags $args|tr ' ' _|tr -d '"')_${output_success}${output_extension}
 					if [ -f ${filename} ]
 					then
 						cat $filename | tail -n +2 | sed "s/^/`echo $flags $args|commas`,/g" >> $output_file
@@ -219,7 +213,7 @@ compile()
 	build_args ${compile[@]}|while read args; do
 		info_start Setting $compile_counter/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 		instance_start=`date +%s`
-		bash ./compile $args 2>&1 > /dev/null
+		bash $script_compile $args 2>&1 > /dev/null
 		success=$?
 
 		instance_stop=`date +%s`
@@ -285,7 +279,17 @@ batch()
                 eval ${compile[0]}=1
                 dummy_compile=1
         fi
-	local total_instances=$(($run_instances * $compile_instances))
+
+	local restrict_expr="`echo $restrict | build_expression compile run`"
+	local restrict_instances="`build_args ${compile[@]} ${run[@]} | grep -n '' | while read line
+	do
+		eval 'if' $restrict_expr '
+		then
+			echo $line
+		fi'
+	done | tee $temp/freyja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+	local total_instances="`echo $restrict_instances | wc -w`"
+	#local total_instances=$(($run_instances * $compile_instances))
 
         ## Do not do anything if there is no instance to compile or run
         if [ "$total_instances" == "0" ]
@@ -300,18 +304,8 @@ batch()
 		retry_expr=`echo $retry_expr | build_expression compile run`
 
 		## Make up the complete list of settings to run and filter them using the expression
-		retry_numbers="`while read flags
+		retry_numbers="`build_args ${compile[@]} ${run[@]} | grep -n ''| while read line
 		do
-			while read args
-			do
-				echo $flags $args
-			done < <(build_args ${run[@]})
-		done < <(build_args ${compile[@]}) | grep -n ''| while read line
-		do
-			#echo $retry_expr
-			#eval echo $retry_expr
-			#eval echo $retry_expr
-			#echo $?
 			eval 'if' $retry_expr '
 			then
 				echo $line
@@ -325,6 +319,9 @@ batch()
 	else
 		info Will run `echo $retry_numbers|wc -w` instances
 	fi
+
+	## Initialize the instance runing counter
+	local instance_number=0
 	
 	# Initialize output file
 	local start_time=`date +%s`
@@ -348,7 +345,16 @@ batch()
 
 		while read args
 		do
-			local instance_number=$((compile_counter * $run_instances + $run_counter))
+			## If this instance id not part of the compbination filtered with the restricted expression, then go directly to the next without even counting it
+			if [ "`cat $temp/freyja.$$.restricted|cut -f 2 -d :|grep "$flags $args"`" == "" ]
+			then
+				continue
+			fi
+
+			## If the test above was passed, then count this instance
+			local instance_number=$(($instance_number + 1))
+	
+			## If this instance has been cut through the retry option, then skip it (while still counting it)
 			if [ "$retry_only" != "" ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$instance_number$`" == "" ]
 			then
 				run_counter=$(($run_counter + 1))
@@ -362,7 +368,8 @@ batch()
                         fi
 			local instance_start=`date +%s`
 			#local args_index=`index_seq run $args`
-			local basename=${output_base}_${instance_number}
+			local instance_name="`echo $flags $args|tr ' ' _`"
+			local basename=${output_base}_${instance_name}
 
 			## Only run this experiment if there is no output for this one
 			if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$instance_number$`" == "" ]
@@ -373,7 +380,7 @@ batch()
 				## Output the experiment output header
 				## Reduces tabs and spaces to a single space, turn them to commas and frame them with double quotes
 				echo $output_columns | double_quotes > $output_dir/${basename}_$output_progress$output_extension
-				bash ./run $flags $args | while read line;
+				bash $script_run $flags $args | while read line;
 				do
 					## Replace single quotes with double quotes, insert commas between fields
 					echo $line | commas >> $output_dir/${basename}_$output_progress$output_extension
@@ -476,6 +483,34 @@ match()
 
 parse_options()
 {
+	operation=$1
+	shift
+
+	## First catch the operation and experiment names
+	case "$operation" in
+		"compile")
+			:
+		;;
+		"run"|"merge")
+			experiment="$1"
+			shift
+
+			if [ "$experiment" == "" ]
+			then
+				error You must name the experiment to be run
+				usage
+				exit 1
+			fi
+		;;
+	*)
+		error Unknown operation
+		usage
+
+		exit 1
+	;;
+	esac
+
+	## Then parse all other options
 	while [[ $# > 0 ]]
 	do
 		case "$1" in
@@ -539,6 +574,22 @@ parse_options()
 					fi
 				fi
 			;;
+			"--compile")
+				shift
+				script_compile="$1"
+			;;
+			"--run")
+				shift
+				script_run="$1"
+			;;
+			"--settings")
+				shift
+				script_settings="$1"
+			;;
+			"--variables")
+				shift
+				script_variables="$1"
+			;;
 			*)
 				error Unknown option: $1
 				usage
@@ -551,76 +602,78 @@ parse_options()
 	done
 }
 
-operation=$1
-shift
+## Catch exit events to clean up temporary files
+## http://redsymbol.net/articles/bash-exit-traps/
+
+finish() {
+	rm -rf $temp
+}
+trap finish EXIT 
+#trap finish EXIT 
+
+## Fill up undefined options with default values
+if [ "`echo $restrict|xargs echo`" == "" ]
+then
+	restrict=/bin/true
+fi
+
+script_compile=./compile
+script_run=./run
+script_settings=./settings
+script_variables=./variables
+
+experiment=""
+operation=""
+
+## Parse all options
+eval parse_options `for i in "$@"; do printf "\"%s\" " "$i"; done; echo`
+
+## Load global settings
+. $script_settings
+
+## Load experiment variable data
+. $script_variables
+
+## Prepare a temporary file folder in $temp and update temp variable
+temp=$temp/freyja.$$.tmp
+mkdir -p $temp
 
 echo -n "" > $logfile
 
-case "x$operation" in
-	"xcompile")
+case "$operation" in
+	"compile")
 		compile
 		exit $?
 	;;
 
-	"xrun")
-		experiment=$1
-		shift
-
-		eval parse_options `for i in "$@"; do printf "\"%s\" " "$i"; done; echo`
-
-		if [ "x$experiment" == "x" ];
+	"run")
+		batch
+		batch_success=$?
+		
+		if [ "$batch_success" == "0" ]
 		then
-			error You must name the experiment to be run
-			usage
-			exit 1
-		else
-			batch
-			batch_success=$?
-			
-			if [ "$batch_success" == "0" ]
+			if [ "$instance_name" = "" ]
 			then
-				if [ "$instance_name" = "" ]
-				then
-					filename=`get_date_filename`
-				else
-					filename=$instance_name
-				fi
-				mv $experiment/$output_dir_current $experiment/$filename
+				filename=`get_date_filename`
 			else
-				filename=$output_dir_current
+				filename=$instance_name
 			fi
-			merge_dir $experiment/$filename/$data$ext $experiment/$filename
-			merge_dir $experiment/$data$ext `ls -d $experiment/*`
-			cp $experiment/$data$ext .
-
-			exit $batch_success
-		fi
-	;;
-
-	"xmerge")
-		experiment=$1
-		shift
-
-		parse_options $@
-
-		if [ "x$experiment" == "x" ];
-		then
-			error You must name the experiment to be merged
-			usage
-			exit 1
+			mv $experiment/$output_dir_current $experiment/$filename
 		else
-			merge_dir $experiment/$data$ext `ls -d $experiment/*`
-			cp $experiment/$data$ext .
-
-			exit 0
+			filename=$output_dir_current
 		fi
-	;;		
+		merge_dir $experiment/$filename/$data$ext $experiment/$filename
+		merge_dir $experiment/$data$ext `ls -d $experiment/*`
+		cp $experiment/$data$ext .
 
-	*)
-		error Unknown operation
-		usage
-
-		exit 1
+		exit $batch_success
 	;;
+
+	"merge")
+		merge_dir $experiment/$data$ext `ls -d $experiment/*`
+		cp $experiment/$data$ext .
+
+		exit 0
+	;;		
 esac
 
