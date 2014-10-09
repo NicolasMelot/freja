@@ -49,6 +49,19 @@ error()
 	log '[ERROR] '"$@"
 }
 
+## Load the variable file, if any, or display an error message and exits
+load_variables()
+{
+	if [ ! -f $script_variables ]
+	then
+		error Cannot find variables file \"$script_variables\"
+		exit 1
+	else
+		## Load experiment variable data
+		. $script_variables
+	fi
+}
+
 ## Returns true if $1 is an integer or a decimal
 is_number()
 {
@@ -564,7 +577,7 @@ parse_options()
 		"compile")
 			:
 		;;
-		"run"|"merge")
+		"run" | "merge")
 			experiment="$1"
 			shift
 
@@ -575,7 +588,21 @@ parse_options()
 				exit 1
 			fi
 		;;
-		"label")
+		"fuse")
+			column=$1
+			shift
+
+			if [ "$column" == "" ] || [ "`echo $column | grep ^--`" != "" ]
+			then
+				error You must specify a column name to fuse two experiments
+				usage
+				exit 1
+			fi
+
+			## Default output file
+			output_file=frame.csv
+		;;
+		"label" | "convert")
 			## Valid operation, but nothing to do here
 			:
 		;;
@@ -667,6 +694,19 @@ parse_options()
 				shift
 				script_variables="$1"
 			;;
+			"--output")
+				shift
+				output_file="$1"
+
+				if [ -f "$output_file" ]
+				then
+					error Output file \"$output_file\" already exist. Delete or move it and try again
+					exit 1
+				fi
+			;;
+			"--")
+				return 0
+			;;
 			*)
 				error Unknown option: $1
 				usage
@@ -715,6 +755,8 @@ if [ "$temp" == "" ]
 then
 	temp=/tmp
 fi
+temp=$temp/freyja.$$.tmp
+default_temp="$temp"
 
 experiment=""
 operation=""
@@ -731,17 +773,13 @@ then
 	else
 		## Load global settings
 		. $script_settings
-	fi
-fi
-temp=$temp/freyja.$$.tmp
 
-if [ ! -f $script_variables ]
-then
-	error Cannot find variables file \"$script_variables\"
-	exit 1
-else
-	## Load experiment variable data
-	. $script_variables
+		## Check if temp has been redefined; if so, add it a unique directory name
+		if [ "$temp" != "$default_temp" ]
+		then
+			temp=$temp/freyja.$$.tmp
+		fi
+	fi
 fi
 
 mkdir -p $temp
@@ -749,6 +787,7 @@ echo -n "" > $logfile
 
 case "$operation" in
 	"compile")
+		load_variables
 		if [ ! -f $script_compile ]
 		then
 			error Cannot find compile script \"$script_compile\"
@@ -759,6 +798,7 @@ case "$operation" in
 	;;
 
 	"run")
+		load_variables
 		if [ ! -f $script_run ]
 		then
 			error Cannot find run script \"$script_run\"
@@ -785,7 +825,7 @@ case "$operation" in
 		merge_dir $experiment/$filename/$data$ext $experiment/$filename
 		## Merge all instances of this experiment into one single file
 		merge_dir $experiment/$data$ext `ls -d $experiment/*`
-		cp $experiment/$data$ext .
+		cp $experiment/$data$ext ./$output_file
 
 		## Create an alias file
 		build_aliases > $labels_filename
@@ -794,16 +834,45 @@ case "$operation" in
 	;;
 
 	"merge")
+		load_variables
 		merge_dir $experiment/$data$ext `ls -d $experiment/*`
-		cp $experiment/$data$ext .
+		cp $experiment/$data$ext ./$output_file
 
 		exit 0
 	;;
 
 	"label")
+		load_variables
 		build_aliases > $labels_filename
 
 		exit $?
+	;;
+
+	"fuse")
+		## Skip all arguments until we finally find the list of files to fuse
+		while [ "$1" != "--" ]
+		do
+			shift
+		done
+		shift
+
+		## Take the header of the first file to merge
+		cat $1 | head -1 | sed 's/^/"'$column'",/g' > $output_file
+
+		## Merge several csv files into a third bigger, with an additional column
+		counter=0
+		while [[ $# > 0 ]]
+		do
+			cat $1 | tail -n +2 | sed 's/^/"'$counter'",/g' >> $output_file
+			counter=$(( $counter + 1 ))
+			shift
+		done
+	;;
+
+	"convert")
+		load_variables
+		## Convert a csv file to a matlab-readable cell file
+		:
 	;;
 esac
 
