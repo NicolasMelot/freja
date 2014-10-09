@@ -62,7 +62,7 @@ end
 collected = select(table, {'entropy' 'nb threads' 'count' 'thread' 'start time sec' 'start time nsec' 'stop time sec' 'stop time nsec' 'thread start sec' 'thread start nsec' 'thread stop sec' 'thread stop nsec'}, 0); % Keep every columns except the try number.
 collected = where(collected, 'nb threads >= nb threads::seq. & nb threads <= nb threads::8'); % Keeps only measurements involving sequential or 1, 2, 4 and 8 threads.
 collected = duplicate(collected, {'stop time nsec' 'thread stop nsec'}, {'global time' 'thread time'}, 1); % Duplicate two columns. The new columns will be used to store the computed time difference between start and stop for both global and per-thread process.
-collected = apply(collected, {'global time' 'thread time'}, {@time_difference_global, @time_difference_thread}, 0); % Compute the global start-stop difference
+collected = apply(collected, {'global time' 'thread time'}, {@time_difference_global, @time_difference_thread}, {'', ''}, 0); % Compute the global start-stop difference
 collected = select(collected, {'entropy' 'nb threads' 'count' 'thread' 'global time' 'thread time'}, 0); % keep every features (entropy, number of threads, number of jumps and thread number) plus the time differences calculated earlier.
 collected = duplicate(collected, {'global time' 'thread time'}, {'global stddev' 'thread stddev'}, 2); % Create 2 more columns to calculate timing standard deviations
 
@@ -84,14 +84,14 @@ gantt = where(table, ['nb threads == ' int2str(max_threads) ' & count == ' int2s
 
 gantt = duplicate(gantt, {'nb threads' 'nb threads'}, {'thread start' 'thread stop'}, -1); % Create new columns for start and stop values
 gantt = setalias(gantt, {'thread start' 'thread stop'}, {{} {}}); % Make sure the two new columns copied from column thread do not get aliases that make no sens to them
-gantt = apply(gantt, {'thread start' 'thread stop'}, {@thread_start, @thread_stop}, 0); % Apply conversion functions
+gantt = apply(gantt, {'thread start' 'thread stop'}, {@thread_start, @thread_stop}, {'' ''}, 0); % Apply conversion functions
 
 gantt = select(gantt, {'entropy', 'try', 'thread', 'thread start' 'thread stop'}, 0); % eliminate nb threads and count columns
 % Create a new lines for global time, in order to fit data shape to quickgantt function, with minimal starting time and maximal finishing time
 globals = groupby(gantt, {'try'}, {'entropy', 'thread', 'thread start', 'thread stop'}, {@mean, @mean, @min, @max}); % Isolate data gather per try number and apply a mean to every other columns. We only care about try columns and global time values here. The rest is '@mean'ed' but we won't keep it. 
-globals = apply(globals, {'thread' 'thread start' 'thread stop'}, {@set_thread_zero, @cp_start, @cp_stop}, 0); % Reset thread number to 0 (to denote global time) and copy columns for global timing to thread columns
+globals = apply(globals, {'thread' 'thread start' 'thread stop'}, {@set_thread_zero, @cp_start, @cp_stop}, {'' '' ''}, 0); % Reset thread number to 0 (to denote global time) and copy columns for global timing to thread columns
 
-gantt = insert(where(gantt, 'thread != thread::SEQ'), data(globals, {'entropy', 'try', 'thread', 'thread start', 'thread stop'}, 0)); % Insert this new data to the table. Lines of thread = 0 now denote global time.
+gantt = insert(where(gantt, 'thread != thread::0'), data(globals, {'entropy', 'try', 'thread', 'thread start', 'thread stop'}, 0)); % Insert this new data to the table. Lines of thread = 0 now denote global time.
 
 % Compute thread (and global) start and stop time
 gantt = groupby(gantt, {'thread'}, {'thread start' 'thread stop'}, {@mean, @mean}); % Group by thread number and reduce groups using mean function
@@ -99,7 +99,7 @@ thread = alias(gantt, {'thread'}){:};
 thread_size = size(thread);
 thread_size = thread_size(2);
 
-%% Rename 'SEQ' to 'Global'
+%% Rename 'seq.' to 'Global'
 thread = {'Global' thread{2:thread_size}};
 %thread = {thread{2:thread_size} 'Global'};
 gantt = setalias(gantt, {'thread'}, {thread});
@@ -149,7 +149,7 @@ quickbar(num, ...
 	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
 	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
+	{'100m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'seq.'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-100' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 %% Now we want seq. to be at the end of the plot
@@ -183,12 +183,12 @@ quickbar(num,
 	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
 	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
-	{'200m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'SEQ'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
+	{'200m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'seq.'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % Separate graph for task gantt representation
-%% We want the global line (SEQ) to be at the top
-gantt = shuffle(gantt, {'thread'}, {{'Thread_1' 'Thread_2' 'Thread_3' 'Thread_4' 'Thread_5' 'Thread_6' 'Thread_7' 'Thread_8' 'SEQ'}});
+%% We want the global line (seq.) to be at the top
+gantt = shuffle(gantt, {'thread'}, {{'Thread_1' 'Thread_2' 'Thread_3' 'Thread_4' 'Thread_5' 'Thread_6' 'Thread_7' 'Thread_8' 'seq.'}});
 
 num=4;
 quickgantt(num, ... % figure number id

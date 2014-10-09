@@ -68,7 +68,7 @@ is_number()
 	printf %f\\n $1 > /dev/null 2>&1
 }
 
-## Returns true if all space-separated elements of $@ (regardless of double quotes") are an integers or decimal value
+## Returns true if all space-separated elements of $@ (regardless of double quotes) are an integers or decimal value
 is_number_seq()
 {
 	local first="$1"
@@ -239,6 +239,134 @@ build_aliases()
 	fi
 	## Close the list
 	echo ")"
+}
+
+convert_csv_to_m()
+{
+	## Return the index of value $1 for variable $2 at index $3
+	find_index()
+	{
+		local value=$1
+		local variable=$2
+		local index=$3
+
+		## We are in another process context; we need to reload the variable file
+		load_variables
+
+		if [ "`eval echo '$'labels_$variable`" != "" ]
+		then
+			local counter=0
+			#echo '$'labels_$variable >&2
+			#eval echo '$'labels_$variable >&2
+			#eval echo '$'labels_$variable | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ >&2
+			while read j
+			do
+				local instance="`echo $j | cut -f 1 -d : | xargs echo`"
+				if [ "$instance" == "$value" ]
+				then	
+					break
+				else
+					counter=$(( $counter + 1 ))
+				fi
+			done < <(eval echo '$'labels_$variable | tr ";" \\\n | xargs -L 1 echo | grep -v ^$)
+		else
+			local myindex="`echo ${compile[@]} ${run[@]} $output_columns | tr ' ' \\\n | grep -n $variable | cut -f 1 -d :`"
+			local counter=0
+			while read j
+			do
+				if [ "$j" == "$value" ]
+				then
+					break
+				else
+					counter=$(( $counter + 1 ))
+				fi
+			done < <(cat $tempfile | cut -f $myindex -d ' ' | sort -V | uniq)
+		fi
+
+		echo -n "$counter "
+	}
+
+	local input="$1"
+	local output="$2"
+
+	## Prepare the environment variable to export to sed's shell environment
+	export -f find_index
+	export -f load_variables
+	export script_variables
+	export input
+	export tempfile=$temp/convert.$$.tmp
+
+	## Extract a function name from the output filename, for the table to be generated
+	local name="`basename $output .m`"
+	echo -e $DATA_BEGIN | sed s/$table_name/$name/g > $output
+
+	## Cut the header to create an initial, unfiltered table
+	cat $input | tail -n +2 | tr -d '"' | tr ',' ' ' | sed "s/'/\\\'/g" > $temp/convert.$$.tmp
+	local counter=1
+	## For each variable, see if there is a label defined. If so, change the value to an index using sed
+	for i in ${compile[@]} ${run[@]} $output_columns
+	do
+		## Convert every column for which there is an alias or if it is not a sequence of numbers
+		if [ "`eval echo '$'labels_$i`" != "" ] || ! is_number_seq `cat $temp/convert.$$.tmp|cut -f $counter -d ' '`
+		then
+			if [ "`eval echo '$'labels_$i`" == "" ]
+			then
+				eval labels_$i=\"`cat $temp/convert.$$.tmp | sed "s/'/\\\'/g" | cut -f $counter -d ' ' | sort -V | uniq | tr \\\n ';'`\"
+			fi
+
+			cat $temp/convert.$$.tmp | sed 's/\(\([^ ]\+ \)\{'$(( $counter - 1 ))'\}\)\([^ ]\+\)\([^$]*\)$/echo -n "\1"; bash -c "find_index \3 '$i' '$counter'"; echo \4/e' > $temp/convert.$$.filtered.tmp
+			cat $temp/convert.$$.filtered.tmp | sed "s/'/\\\'/g" | tr -s ' ' > $temp/convert.$$.tmp
+		fi
+		
+		counter=$(( $counter + 1 ))
+	done
+	cat $temp/convert.$$.tmp >> $output
+	echo -e $DATA_END >> $output
+
+	echo -e $COLUMNS_BEGIN >> $output
+	for i in ${compile[@]} ${run[@]} $output_columns
+	do
+		echo -n "'"$i"' " | tr '_' ' ' >> $output
+	done		
+	echo -e $COLUMNS_END >> $output
+
+	echo -e $REF_BEGIN >> $output
+	for i in ${compile[@]} ${run[@]} $output_columns
+	do
+		if [ "`eval echo '$'labels_$i`" != "" ]
+		then
+			echo -n '{' >> $output
+			eval echo '$'labels_$i | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ | while read j
+			do
+				local instance="`echo $j | cut -f 1 -d : | sed "s/'/"'"'"'"'"'"/g" | xargs echo | sed "s/'/''/g"`"
+				echo -n "'"$instance"' " >> $output
+			done
+			echo -n '} ' >> $output
+		else
+			echo -n "{} " >> $output
+		fi
+	done
+	echo -e $REF_END >> $output
+
+	echo -e $SYMB_BEGIN >> $output
+	for i in ${compile[@]} ${run[@]} $output_columns
+	do
+		if [ "`eval echo '$'labels_$i`" != "" ]
+		then
+			echo -n '{' >> $output
+			eval echo '$'labels_$i | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ | while read j
+			do
+				local label="`echo $j | cut -f 1 -d : --complement | sed "s/'/"'"'"'"'"'"/g" | xargs echo | sed "s/'/''/g"`"
+				echo -n "'"$label"' " >> $output
+			done
+			echo -n '} ' >> $output
+		else
+			echo -n "{} " >> $output
+		fi
+	done
+	echo -e $SYMB_END >> $output
+
+	
 }
 
 merge_dir()
@@ -602,7 +730,20 @@ parse_options()
 			## Default output file
 			output_file=frame.csv
 		;;
-		"label" | "convert")
+		"convert")
+			input_file="$1"
+			shift
+
+			if [ "$input_file" == "" ] || [ ! -f "$input_file" ]
+			then
+				error Invalid file or file not found: \"$input_file\"
+				exit 1
+			fi
+
+			## Default output file
+			output_file=table.m
+		;;
+		"label")
 			## Valid operation, but nothing to do here
 			:
 		;;
@@ -871,6 +1012,8 @@ case "$operation" in
 
 	"convert")
 		load_variables
+
+		convert_csv_to_m "$input_file" "$output_file"
 		## Convert a csv file to a matlab-readable cell file
 		:
 	;;

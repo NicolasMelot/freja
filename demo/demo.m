@@ -91,7 +91,5 @@ generate_settings
 %% The Gantt chart (graph #4) is higher than other plots
 height{4} = 600;
 
-legend_location{3} = 'northwest';
-
 %% Now generate all plots
 drawgraphs

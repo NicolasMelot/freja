@@ -91,15 +91,15 @@ function out = colsep(table, colx, coly, def)
 	lines_per_group = data(out, {column_size}, 0);
 	lines_per_group = max(lines_per_group);
 	% Spread out maximal group size to all lines
-	out = apply(out, {column_size}, {@spread_max_size}, 0);
+	out = apply(out, {column_size}, {@spread_max_size}, {''}, 0);
 	% Write in extra column how many duplicate we need
 	out = groupby(out, {colx}, {coly column_size}, {@alllines, @how_many_duplicate});
 	% Give each line a unique identifier
-	out = apply(out, {line_id}, {@give_lines_id}, 0);
+	out = apply(out, {line_id}, {@give_lines_id}, {''}, 0);
 	% Isolate each line, duplicate lines marked as such and mark duplicate lines as opposed to others
 	out = groupby(out, {line_id}, {column_size}, {@do_duplicate});
 	% Reset all duplicate lines with def
-	out = apply(out, {coly}, {@reset_line}, def);
+	out = apply(out, {coly}, {@reset_line}, {''}, def);
 	% Get rid of all additional temporary columns
 	out = select(out, except(coln(out), {column_size, line_id}), 0);
 

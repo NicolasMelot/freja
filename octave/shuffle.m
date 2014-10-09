@@ -108,9 +108,9 @@ function out = shuffle(table, cols, refs)
 		size_old = size(size_old);
 		size_old = size_old(2);
 
-		if size_new != size_old
-			error(['New reference set for column ''' cols{i} ''' has a different amount of reference (' int2str(size_new) ') than in table (' int2str(size_old) ').']);
-		end
+		%if size_new != size_old
+		%	error(['New reference set for column ''' cols{i} ''' has a different amount of reference (' int2str(size_new) ') than in table (' int2str(size_old) ').']);
+		%end
 
 		%% Initialise an empty alias collection
 		aliases{i} = {};
@@ -122,10 +122,14 @@ function out = shuffle(table, cols, refs)
 		for j = 1:size_old
 			ref_index = cellfindstr(old_ref, refs{i}{j});
 			if ref_index < 1
-				error(['Could not find alias ''' refs{i}{j} ''' in existing aliases for column ''' cols{i} '''.']);
+				continue;
+				%error(['Could not find alias ''' refs{i}{j} ''' in existing aliases for column ''' cols{i} '''.']);
 			end
 			tmp_alias = aliases{i};
 			aliases{i} = {tmp_alias{:}, old_alias{ref_index}};
+		end
+		if ref_index < 1
+			continue;
 		end
 
 		for j = 1:size_values
@@ -137,7 +141,8 @@ function out = shuffle(table, cols, refs)
 			%% Find the new index for this ref
 			new_index = cellfindstr(refs{i}, old_ref_val);
 			if new_index < 1
-				error(['Could not find ref ''' old_ref_val ''' in new refs for column ''' cols{i} '''.']);
+				continue;
+				%error(['Could not find ref ''' old_ref_val ''' in new refs for column ''' cols{i} '''.']);
 			end
 
 			delta_index = value - new_index;
@@ -149,6 +154,9 @@ function out = shuffle(table, cols, refs)
 			%% Add this vector to the new vector
 			new_vector = [new_vector; value_vector];
 
+		end
+		if ref_index < 1
+			continue;
 		end
 	
 		matrix = [matrix(:, 1:col_index - 1) new_vector matrix(:, col_index + 1:matrix_size)];

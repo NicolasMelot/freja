@@ -102,7 +102,8 @@ function out = where(table, cond)
 		%% Extract the symbol value and check if it could be found
 		value = cellfindstr(ref(table, {column}){1}, symbol);
 		if value == 0
-			error(['Cannot resolve symbol ''' match '''.']);
+			value = prod(size(ref(table, {column}){1})) + 1;
+			warning(['Cannot resolve symbol ''' match '''.']);
 		end
 		value = value - 1;
 		
