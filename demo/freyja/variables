@@ -19,7 +19,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Variable and alias name format:
-# Forbidden character: !=<>:&|()+-*/ (may be more characters raising issues. Stick to a-zA-Z0-9_~{}^ and ' '
+# Forbidden character: !=<>:&|()+-*/;"' (may be more characters raising issues. Stick to a-zA-Z0-9_~{}^ and ' '
 # Special characters: ~^{}  ~ is replaced by _ and are interpreted for exposants and indices as latex does.
 #	Note   : this replacement is performed only on aliases
 # Must not begin with a digit 0-9 or a point '.' and must not start or finish with a space ' '.
@@ -40,16 +40,14 @@ try=`seq 1 2`				# Number of different run per setting
 ## Run-time data
 output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec comment1 comment2"
 
-## Aliases for each variable to display in plots. *Must* be consistent with variables above, but there can be more values (ignored)
-alias_count="10^{8} 2_10^8"
-alias_thread="SEQ Thread_1 Thread_2 Thread_3 Thread_4 Thread_5 Thread_6 Thread_7 Thread_8"
-alias_try="1 2 3 4 5 6 7 8 9 10"
-
-## Assume there are other possibles values already used in previous experiments but not in this one (ref_*). These past values also have aliases (symb_*. A list is automatically generated to the files "references" merging these values and the ones givens in varaibles above.
-ref_count="10000000 50000000"
-symb_count="10^5 5_10^7"
-
-## You can also define references for values the program tested generate
-ref_thread="SEQ Thread_1 Thread_2 Thread_3 Thread_4 Thread_5 Thread_6 Thread_7 Thread_8"
-
+## Never allow experiments involving a try number two when exactly 2 threads are involved
 restrict='! ( match(try,^2$) && match(nb_threads,^2$) )'
+
+## Give human-friendly aliases for every value of variables
+## Order variables occurences
+## Skip the label if all you want is to arrange occurences in order, and use these occurrences name as labels
+## Note that all labels are left and right trimmed
+labels_nb_threads="seq.: Sequential; over.: Overhead;2;3;4"
+labels_count="100000000:10^8; 200000000: 20^8"
+labels_thread="0:Thread 1 (seq.); 1: Thread 1; 2: Thread 2; 3: Thread 3; 4: Thread 4"
+labels_columns="entropy: Entropy; nb_threads: Number of threads; count: Number of iterations; try: Attempt; thread: Thread;"

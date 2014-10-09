@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Load functions to resolve aliases
-. ./resolver
+#. ./resolver
 
 log_start()
 {
@@ -49,11 +49,37 @@ error()
 	log '[ERROR] '"$@"
 }
 
+## Returns true if $1 is an integer or a decimal
+is_number()
+{
+	printf %f\\n $1 > /dev/null 2>&1
+}
+
+## Returns true if all space-separated elements of $@ (regardless of double quotes") are an integers or decimal value
+is_number_seq()
+{
+	local first="$1"
+	shift
+
+	if (( $# > 0 ))
+	then
+
+		is_number "$first"
+		local head=$?
+		is_number_seq $@
+		local tail=$?
+
+		return $(($head || $tail))
+	else
+		is_number "$first"
+	fi
+}
+
 usage()
 {
 	echo 
 	echo
-	echo './start [compile | run] <experiment> [--instance-name <instance name>]'
+	echo './start [compile | run] <experiment> [--instance <instance name>]'
 	echo '	[--retry [[--number | -n <numbers>] | [--pattern | -p <expression>] | --all] [--retry-only]]'
 	echo
 	echo "	<experiment>	Space-free, filename-valid string that name a category of the experiment batch being run."
@@ -153,6 +179,53 @@ double_quotes()
 commas()
 {
 	sed 's/"/"\\\\\"/g'|while read i; do :(){ for i in "$@"; do echo -n $i,; done|sed 's/,$/\n/g'; }; eval : $i; done
+}
+
+build_aliases()
+{
+	## Take as a base the labelling functions snippet
+	cat $labels_snippet_filename
+
+	## Begin with a list of columns
+	echo "labels = list("
+
+	## Then find aliases for all variables
+	for i in ${compile[@]} ${run[@]} $output_columns
+	do
+		## Only output aliases if this variable has some declared
+		if [ "`eval echo '$'labels_$i`" != "" ]
+		then
+			## Output the column name ready to receive the vector
+			echo -en "\t$i = c("
+
+			## Iterate through all pairs (key,label)
+			eval echo '$'labels_$i | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ | while read j
+			do
+				instance="`echo $j | cut -f 1 -d : | xargs echo`"
+				label="`echo $j | cut -f 1 -d : --complement | xargs echo`"
+				echo -n \\\"$instance\\\" = \\\"$label\\\"', '
+			done | rev | cut -f 1 -d ',' --complement | rev | xargs echo -n
+			echo "),"
+		fi
+	done
+
+	## Now add aliases for column names, if any
+	if [ "`eval echo '$'labels_columns`" != "" ]
+	then
+		## Output the column name ready to receive the vector
+		echo -en "\tcolumns = c("
+
+		## Iterate through all pairs (key,label)
+		eval echo '$'labels_columns | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ | while read j
+		do
+			instance="`echo $j | cut -f 1 -d : | xargs echo`"
+			label="`echo $j | cut -f 1 -d : --complement | xargs echo`"
+			echo -n \\\"$instance\\\" = \\\"$label\\\"', '
+		done | rev | cut -f 1 -d ',' --complement | rev | xargs echo -n
+		echo ")"
+	fi
+	## Close the list
+	echo ")"
 }
 
 merge_dir()
@@ -502,12 +575,16 @@ parse_options()
 				exit 1
 			fi
 		;;
-	*)
-		error Unknown operation
-		usage
+		"label")
+			## Valid operation, but nothing to do here
+			:
+		;;
+		*)
+			error Unknown operation
+			usage
 
-		exit 1
-	;;
+			exit 1	
+		;;
 	esac
 
 	## Then parse all other options
@@ -619,8 +696,25 @@ fi
 
 script_compile=./compile
 script_run=./run
-script_settings=./settings
 script_variables=./variables
+
+## Load environment setting files
+if [ -f /etc/freyja/settings ]
+then
+	. /etc/freyja/settings
+fi
+if [ -f ~/.freyja/settings ]
+then
+	. ~/.freyja/settings
+fi
+if [ "$logfile" == "" ]
+then
+	logfile=/dev/null
+fi
+if [ "$temp" == "" ]
+then
+	temp=/tmp
+fi
 
 experiment=""
 operation=""
@@ -628,25 +722,49 @@ operation=""
 ## Parse all options
 eval parse_options `for i in "$@"; do printf "\"%s\" " "$i"; done; echo`
 
-## Load global settings
-. $script_settings
-
-## Load experiment variable data
-. $script_variables
-
-## Prepare a temporary file folder in $temp and update temp variable
+if [ "$script_settings" != "" ]
+then
+	if [ ! -f $script_settings ]
+	then
+		error Cannot find settings file \"$script_settings\"
+		exit 1
+	else
+		## Load global settings
+		. $script_settings
+	fi
+fi
 temp=$temp/freyja.$$.tmp
-mkdir -p $temp
 
+if [ ! -f $script_variables ]
+then
+	error Cannot find variables file \"$script_variables\"
+	exit 1
+else
+	## Load experiment variable data
+	. $script_variables
+fi
+
+mkdir -p $temp
 echo -n "" > $logfile
 
 case "$operation" in
 	"compile")
+		if [ ! -f $script_compile ]
+		then
+			error Cannot find compile script \"$script_compile\"
+			exit 1
+		fi
 		compile
 		exit $?
 	;;
 
 	"run")
+		if [ ! -f $script_run ]
+		then
+			error Cannot find run script \"$script_run\"
+			exit 1
+		fi
+
 		batch
 		batch_success=$?
 		
@@ -662,9 +780,15 @@ case "$operation" in
 		else
 			filename=$output_dir_current
 		fi
+
+		## Create a csv file from the experiment instance that was just run
 		merge_dir $experiment/$filename/$data$ext $experiment/$filename
+		## Merge all instances of this experiment into one single file
 		merge_dir $experiment/$data$ext `ls -d $experiment/*`
 		cp $experiment/$data$ext .
+
+		## Create an alias file
+		build_aliases > $labels_filename
 
 		exit $batch_success
 	;;
@@ -674,6 +798,12 @@ case "$operation" in
 		cp $experiment/$data$ext .
 
 		exit 0
-	;;		
+	;;
+
+	"label")
+		build_aliases > $labels_filename
+
+		exit $?
+	;;
 esac
 

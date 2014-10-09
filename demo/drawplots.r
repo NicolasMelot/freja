@@ -1,10 +1,14 @@
 #!/usr/bin/env Rscript
 
-## Load ggplot
+## Load packages
 library(ggplot2)
+library(plyr)
 
 ## Read the data set
-mydata = read.csv("table.m")
+data.frame = read.csv("table.csv")
+
+## Load labels and labelling functions
+source("labels.r")
 
 ## Define a function to convert nanoseconds to seconds
 nsec2sec = function(nsec)
@@ -12,33 +16,27 @@ nsec2sec = function(nsec)
   return(nsec / 1000000000)
 }
 
-## Reorder indexes for number of threads, so that sequential and overhead are first
-mydata$nb_threads <- factor(mydata$nb_threads, levels = c("seq.", "over.", "2", "3", "4", "5"), labels=c("Sequential", "Overhead", "2", "3", "4", "5"))
-## Remove unused levels in nb_threads
-mydata$nb_threads <- factor(mydata$nb_threads)
-
-## Create factors from a raw numeric variable
-mydata$thread <- as.factor(mydata$thread)
-## Give factors a human-readable label
-mydata$thread <- factor(mydata$thread, labels=c("Thread 1 (seq.)", "Thread 1", "Thread 2", "Thread 3", "Thread 4"))
-## Remove unused levels in nb_threads
-mydata$thread <- factor(mydata$thread)
-
 ## create a ggplot base object, adds a bar diagram with individual thread performance
 ## then add two curves for both count experiments
 plot = ggplot() +
-  geom_bar(data=ddply(
-    mydata[mydata$count == 100000000,], c("nb_threads", "thread"), summarize, mean=mean(
+  geom_bar(data = ddply(
+    apply_labels(data.frame[data.frame$count == 100000000,]), c("nb_threads", "thread"), summarize, mean = mean(
       thread_stop_sec + nsec2sec(thread_stop_nsec) - thread_start_sec - nsec2sec(thread_start_nsec))
     ),
-    aes(nb_threads, mean, fill=factor(thread)),
-    position="dodge") +
-  geom_line(data=ddply(
-    mydata, c("nb_threads", "count"), summarize, mean=mean(
+    aes(nb_threads, mean, fill = thread),
+    position = "dodge", stat = "identity") +
+  geom_line(data = ddply(
+    apply_labels(data.frame), c("nb_threads", "count"), summarize, mean = mean(
       stop_time_sec + nsec2sec(stop_time_nsec) - start_time_sec - nsec2sec(start_time_nsec))
     ),
-    aes(nb_threads, mean, group=count, color=as.character(count))) +
-  geom_point()
+    aes(nb_threads, mean, group = count, color = count), size=1) +
+  guides(fill=guide_legend(title="Thread"), colour=guide_legend(title="Problem size"), point=guide_legend(title="Point")) +
+  geom_point() +
+  ylab("Running time in seconds") +
+  xlab(label("nb_threads")) +
+  ggtitle("Running time for empty loops") + 
+  scale_fill_manual(values = colorRampPalette(c("#FF0000", "#000000"))(5)) +
+  scale_colour_manual(values = c("#771C19", "#B6C5CC"))
 
 ## Save the plot as a svg file
 ggsave(file="test.svg", plot=plot, width=8, height=6)
