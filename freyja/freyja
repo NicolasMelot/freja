@@ -1,8 +1,5 @@
 #!/bin/bash
 
-## Load functions to resolve aliases
-#. ./resolver
-
 log_start()
 {
 	echo -n "$@"

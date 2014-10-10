@@ -1,0 +1,57 @@
+#!/bin/bash
+
+#     Copyright 2011 Nicolas Melot
+# 
+#    Nicolas Melot (nicolas.melot@liu.se)
+# 
+# 
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+# 
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+# 
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+logfile=log
+
+table_name=table
+
+temp=/tmp
+columns_list_name=table_columns
+symbol_list_name=table_symb
+ref_list_name=table_ref
+columns_file=$temp/pid.$$.columns
+failed_file=$temp/pid.$$.failed
+passed_file=$temp/pid.$$.passed
+data=$table_name
+ext=.csv
+output_dir_current=current
+output_extension=.csv
+output_success=success
+output_failure=failure
+output_progress=progress
+output_base=instance
+labels_filename=labels.r
+labels_snippet_filename=$HOME/.freyja/labels_snippet.r
+
+DATA_BEGIN="function x = $table_name()\\nx = {["
+DATA_END="] $columns_list_name() $symbol_list_name() $ref_list_name()};\\nend\\n"
+
+COLUMNS_BEGIN="function x = $columns_list_name()\\nx = {"
+COLUMNS_END="\\n};\\nend\\n"
+
+SYMB_BEGIN="function x = $symbol_list_name()\\nx = {"
+SYMB_END="\\n};\\nend\\n"
+
+REF_BEGIN="function x = $ref_list_name()\\nx = {"
+REF_END="\\n};\\nend\\n"
+
+failed_begin="==== Failed run ===="
+failed_end="--------------------"
+

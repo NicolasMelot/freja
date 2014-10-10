@@ -122,7 +122,7 @@ quickplot(num, ...
 	'Number of threads', 'Time in milliseconds', 'Global time to perform 100 and 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
 	labels_angle{num}, ... % Orientiation of labels along the x axis
 	{'100m iteration, 0.4 entropy ' '200m iteration, 0.4 entropy '}, ... % Labels for curves
-	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-error' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
+	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % The two following graphs are combined together
 num = 2;
