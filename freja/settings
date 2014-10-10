@@ -38,7 +38,7 @@ output_failure=failure
 output_progress=progress
 output_base=instance
 labels_filename=labels.r
-labels_snippet_filename=$HOME/.freyja/labels_snippet.r
+labels_snippet_filename=$HOME/.freja/labels_snippet.r
 
 DATA_BEGIN="function x = $table_name()\\nx = {["
 DATA_END="] $columns_list_name() $symbol_list_name() $ref_list_name()};\\nend\\n"

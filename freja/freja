@@ -89,7 +89,7 @@ usage()
 {
 	echo 
 	echo
-	echo './start [compile | run] <experiment> [--instance <instance name>]'
+	echo 'freja [compile | run] <experiment> [--instance <instance name>]'
 	echo '	[--retry [[--number | -n <numbers>] | [--pattern | -p <expression>] | --all] [--retry-only]]'
 	echo
 	echo "	<experiment>	Space-free, filename-valid string that name a category of the experiment batch being run."
