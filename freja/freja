@@ -498,7 +498,7 @@ batch()
 		then
 			echo $line
 		fi'
-	done | tee $temp/freyja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+	done | tee $temp/freja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
 	local total_instances="`echo $restrict_instances | wc -w`"
 	#local total_instances=$(($run_instances * $compile_instances))
 
@@ -557,7 +557,7 @@ batch()
 		while read args
 		do
 			## If this instance id not part of the compbination filtered with the restricted expression, then go directly to the next without even counting it
-			if [ "`cat $temp/freyja.$$.restricted|cut -f 2 -d :|grep "$flags $args"`" == "" ]
+			if [ "`cat $temp/freja.$$.restricted|cut -f 2 -d :|grep "$flags $args"`" == "" ]
 			then
 				continue
 			fi
@@ -877,13 +877,13 @@ script_run=./run
 script_variables=./variables
 
 ## Load environment setting files
-if [ -f /etc/freyja/settings ]
+if [ -f /etc/freja/settings ]
 then
-	. /etc/freyja/settings
+	. /etc/freja/settings
 fi
-if [ -f ~/.freyja/settings ]
+if [ -f ~/.freja/settings ]
 then
-	. ~/.freyja/settings
+	. ~/.freja/settings
 fi
 if [ "$logfile" == "" ]
 then
@@ -893,7 +893,7 @@ if [ "$temp" == "" ]
 then
 	temp=/tmp
 fi
-temp=$temp/freyja.$$.tmp
+temp=$temp/freja.$$.tmp
 default_temp="$temp"
 
 experiment=""
@@ -915,7 +915,7 @@ then
 		## Check if temp has been redefined; if so, add it a unique directory name
 		if [ "$temp" != "$default_temp" ]
 		then
-			temp=$temp/freyja.$$.tmp
+			temp=$temp/freja.$$.tmp
 		fi
 	fi
 fi
