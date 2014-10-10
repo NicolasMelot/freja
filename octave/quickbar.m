@@ -50,9 +50,12 @@
 %	fonts:	Font size of legend, title and axes label (scalar)
 %	x_size:	Length of the canvas in pixels, along the x axis (scalar).
 %	y_size:	Height of the canvas in pixels, along the y axis (scalar).
+%	scale:  Scale the plot to the left make room to an outer legend (scalar).
+%		This is a workaround to octave bug #34888.
 %	x_axis:	Label for x axis (string).
 %	y_axis:	Label for y axis (string).
 %	grapht:	Title of the graph (string).
+%	xangle: Angle of labels along the x axis.
 %	graphl: Label of all curves or bars in the graph (cell of string).
 %	legloc: Legend location, for example :'northeast'; see help legend (string).
 %	box:	Surround the legend with a frame (boolean).	
@@ -60,7 +63,7 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickbar(fignum, table, colx, coly, filter, xval, group, style, thickn, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
+function quickbar(fignum, table, colx, coly, filter, xval, group, style, thickn, fontn, fonts, x_size, y_size, scale, x_axis, y_axis, grapht, xangle, graphl, legloc, box, outf, format)
 %% Define a label for mock x values in the case of providing a unique x values that the backend bar() function cannot handle
 empty_label = '';
 check(table);
@@ -201,9 +204,6 @@ set(y_label, 'fontsize', fonts);
 set(g_title, 'fontname', fontn);
 set(g_title, 'fontsize', fonts);
 
-set (findobj (gcf, '-property', 'fontname'), 'fontname', fontn);
-set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
-
 %% Manage labels for all x values
 xval_size = prod(size(xval));
 if xval_size > 0
@@ -240,6 +240,39 @@ else
 		end
 	end
 end
+
+%% Apply the custom font and font size
+set (findobj (gcf, '-property', 'fontname'), 'fontname', fontn);
+set (findobj (gcf, '-property', 'fontsize'), 'fontsize', fonts);
+
+if xangle != 0
+	%% Rotate the labels
+	h = get(gca, 'xlabel');
+	xlabelstring = get(h, 'string');
+	xlabelposition = get(h, 'position');
+
+	%% construct position of new xtick labels
+	yposition = xlabelposition(2);
+	yposition = repmat(yposition, length(x), 1);
+
+	%% disable current xtick labels
+	set(gca, 'xtick', []);
+
+	%% set up new xtick labels and rotate
+	hnew = text(x, yposition, xval, 'fontsize', fonts * 0.75, 'fontname', fontn);
+	set(hnew, 'rotation', xangle, 'horizontalalignment', 'right');
+
+	%% Reposition the x label below the xticks
+	%xlabelposition = get(x_label,'position');
+	%xlabelposition(2) = xlabelposition(2) - fonts - 50;
+	%set(x_label,'position', xlabelposition);
+
+	%xlabh = get(gca,'XLabel');
+	%set(xlabh,'Position',get(xlabh,'Position') - [0 50 0])
+end
+
+%% Squeeze the plot to the left by factor <scale>
+set (gca, 'position', get (0, 'defaultaxesposition') + [0, 0, -1, 0] * scale)
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 

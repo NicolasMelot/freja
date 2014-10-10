@@ -115,38 +115,80 @@ for i = 1:size_cpy
 end
 
 sep = separate(matrix, group);
-max_size=0;
-max_index=0;
+max_size = 0;
+max_index = 0;
 
 maxi = size(sep);
 maxi = maxi(2);
 
 for i = 1:maxi
-    size_sep = size(sep{i});
+	size_sep = size(sep{i});
 	if size_sep(1) > max_size
-		max_size = size_sep(1);
-		max_index = i;
+		max_sep_size = size_sep(1);
+		max_sep_index = i;
 	end
 end
 
-data=[];
+sep2 = data(groupby(table, cpy, {}, {}, 0), cpy, 0);
+max_size = size(sep2);
+max_size = size(sep2)(1);
+
+data = [];
 
 for i = 1:maxi
-    size_sep = size(sep{i});
+	size_sep = size(sep{i});
 	height = max_size - size_sep(1);
 	width = size_sep(2);
-	append = [sep{i}; zeros(height, width)];
+	append = [zeros(max_size, width)];
 
-    maxj = size(copy);
-    maxj = maxj(2);
+	%% Copy the cpy columns into the data
+	maxj = size(copy);
+	maxj = maxj(2);
 	for j = 1:maxj
-		append(:, copy(j)) = sep{max_index}(1:max_size, copy(j));		
-    end
+		append(:, copy(j)) = sep2(:,j);
+	end
 
-    maxj = size(group);
-    maxj = maxj(2);
+	%% Copy the groupby column into the data
+	maxj = size(group);
+	maxj = maxj(2);
 	for j = 1:maxj
 		append(:, group(j)) = sep{i}(1, group(j));
+	end
+
+	% Copy the actually interesting data into the data
+	maxj = size(sep{i});
+	maxl2 = maxj(2);
+	maxj = maxj(1);
+	maxl1 = size(copy);
+	maxl1 = maxl1(2);
+	for j = 1:maxj %% for each line from sep
+		for k = 1:max_size %% See which line in append should received line j of sep
+			ok = 1;
+			for l = 1:maxl1
+				if append(k, copy(l)) != sep{i}(j, copy(l))
+					%% This is not the right line, mark it and stop the iteration
+					ok = 0;
+					break
+				end
+			end
+			%% That was not the right line, step right away to the next line
+			if ok == 0
+				continue
+			else
+				%% Now, copy all the lines from sep to the line in append we found
+				for l = 1:maxl2
+					%% But not the one either in copy or group
+					if ~ismember(copy, l) && ~ismember(group, l)
+						append(k,l) = sep{i}(j,l);
+					else
+						continue
+					end
+				end
+
+				%% The line was copied, no need to seek another line
+				break
+			end
+		end
 	end
 
 	data = [data; append];

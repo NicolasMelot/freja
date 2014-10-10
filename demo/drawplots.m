@@ -66,6 +66,8 @@ collected = apply(collected, {'global time' 'thread time'}, {@time_difference_gl
 collected = select(collected, {'entropy' 'nb threads' 'count' 'thread' 'global time' 'thread time'}, 0); % keep every features (entropy, number of threads, number of jumps and thread number) plus the time differences calculated earlier.
 collected = duplicate(collected, {'global time' 'thread time'}, {'global stddev' 'thread stddev'}, 2); % Create 2 more columns to calculate timing standard deviations
 
+collected = where(collected, 'thread <= thread::4');
+
 % Second part: extraction and reshaping to produce smaller matrices
 % Global timings
 global_timing = groupby(collected, {'entropy' 'nb threads' 'count'}, {'global time' 'thread time' 'global stddev' 'thread stddev'}, {@mean, @mean, @std, @std}); % Separate into groups defined by entropy, number of threads and number of loops
@@ -116,8 +118,9 @@ quickplot(num, ...
 	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
-	thickness{num}, marker_size{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
+	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, scale{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Global time to perform 100 and 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	labels_angle{num}, ... % Orientiation of labels along the x axis
 	{'100m iteration, 0.4 entropy ' '200m iteration, 0.4 entropy '}, ... % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-error' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
@@ -133,23 +136,25 @@ quickerrorbar(num, ...
 	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
-	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
+	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, scale{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	labels_angle{num}, ... % Orientiation of labels along the x axis
 	{'100m iteration, 0.4 entropy '}, ... % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-100' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
-%% This graph is combined with the preivous graph, it keeps the same number
+%% This graph is combined with the previous graph, it keeps the same number
 quickbar(num, ...
 	colsep(where(thread_timing_04, 'count == count::100000000'), 'nb threads', 'thread time', 0), ... % Plot global timings for 100 millions jumps only, thread by thread.
 	'nb threads', ... % x values
-	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4', 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, ... % Values for y, one column per bar
+	{'thread time', 'thread time 2', 'thread time 3', 'thread time 4' 'thread time 5'}, ... %, 'thread time 5', 'thread time 6', 'thread time 7', 'thread time 8'}, ... % Values for y, one column per bar
 	'', ... % Data filter to apply before plotting (100 million jumps only)
 	{}, ... % Label to replace x values. Use raw values
 	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
-	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
-	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
+	style{num}, bar_thickness{num}, ... % Style of the bars ('grouped' or 'stacked')
+	font{num}, font_size{num}, width{num}, height{num}, scale{num}, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 100 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
-	{'100m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'seq.'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
+	labels_angle{num}, ... % Orientiation of labels along the x axis
+	{'100m iteration, 0.4 entropy ' alias(table, {'thread'}){:}{:}}, ... % Labels for curves of the previous graph and bars from this graph
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-100' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 %% Now we want seq. to be at the end of the plot
@@ -168,8 +173,9 @@ quickerrorbar(3,
 	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
 	colors{num}, ... % Colors to be applied to the curves, written in RGB vector format
 	markers{num}, ... % Enough markers for 6 curves. Browse the web to find more.
-	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
+	marker_size{num}, thickness{num}, font{num}, font_size{num}, width{num}, height{num}, scale{num}, ... % Markers size, curves' thickness, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
+	labels_angle{num}, ... % Orientiation of labels along the x axis
 	{'100m iteration, 0.4 entropy '}, ... % Labels for curves
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
@@ -180,10 +186,11 @@ quickbar(num,
 	'', ... % Data filter to apply before plotting (100 million jumps only)
 	{}, ... % Label to replace x values. Use raw values
 	group{num}, ... % Group curve points linearly along x instead of scattering them after their value.
-	'grouped', 0.5, ... % Style of the bars ('grouped' or 'stacked')
-	'MgOpenModernaBold.ttf', 8, 800, 400, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
+	style{num}, bar_thickness{num}, ... % Style of the bars ('grouped' or 'stacked')
+	font{num}, font_size{num}, width{num}, height{num}, scale{num}, ... % Curves' thickness, markers sizes, Font name and font size, canvas' width and height
 	'Number of threads', 'Time in milliseconds', 'Time per thread to perform 200 millions jumps in parallel', ... % Title of the graph, label of y axis and label of x axis.
-	{'200m iteration, 0.4 entropy ' except(alias(table, {'thread'}){:}, {'seq.'}){:}}, ... % Labels for curves of the previous graph and bars from this graph
+	labels_angle{num}, ... % Orientiation of labels along the x axis
+	{'200m iteration, 0.4 entropy ' alias(table, {'thread'}){:}{:}}, ... % Labels for curves of the previous graph and bars from this graph
 	legend_location{num}, legend_box{num}, [ output_prefix{num} int2str(num) '_' 'timing-200' '.' output_extension{num}], output_format{num}); % Layout of the legend, file to write the plot to and format of the output file
 
 % Separate graph for task gantt representation

@@ -56,9 +56,12 @@
 %	fonts:	Font size of legend, title and axes label (scalar)
 %	x_size:	Length of the canvas in pixels, along the x axis (scalar).
 %	y_size:	Height of the canvas in pixels, along the y axis (scalar).
+%	scale:  Scale the plot to the left make room to an outer legend (scalar).
+%		This is a workaround to octave bug #34888.
 %	x_axis:	Label for x axis (string).
 %	y_axis:	Label for y axis (string).
 %	grapht:	Title of the graph (string).
+%	xangle: Angle of labels along the x axis.
 %	graphl: Label of all curves or bars in the graph (cell of string).
 %	legloc: Legend location, for example :'northeast'; see help legend (string).
 %	box:	Surround the legend with a frame (boolean).	
@@ -66,7 +69,7 @@
 %	format:	Descriptor of the output format. Example: 'epsc2'; see help print
 %		(string).
 
-function quickerrorbar(fignum, table, colx, coly, err, filter, xval, group, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, x_axis, y_axis, grapht, graphl, legloc, box, outf, format)
+function quickerrorbar(fignum, table, colx, coly, err, filter, xval, group, colors, marks, curvew, markss, fontn, fonts, x_size, y_size, scale, x_axis, y_axis, grapht, xangle, graphl, legloc, box, outf, format)
 
 check(table);
 
@@ -138,7 +141,7 @@ allx_values -= maxx;
 
 %% If the group option is chose, switch original x vector with continuous values
 if group
-	table = apply(table, {colx}, {@setC}, allx_values);
+	table = apply(table, {colx}, {@setC}, {''}, allx_values);
 end
 
 %% Fill aliases and references for x with the ones actually used
@@ -169,7 +172,7 @@ for i = 1:maxi
 	all_x = [all_x data(src, {colx}, 0)];
 
 	plotting(i) = errorbar(data(src, {colx}, 0), data(src, {coly{i}}, 0), data(src, {err{i}}, 0));
-
+	
 	max_value = max(max(data(src, coly, 0) + data(src, err, 0)));
 	min_value = min(min(data(src, coly, 0) - data(src, err, 0)));
 
@@ -180,7 +183,10 @@ for i = 1:maxi
 end
 
 all_x = unique(sort(all_x));
-ylim([min_value - (max_value - min_value) / y_marging, max_value + (max_value - min_value) / y_marging]);
+bounds = [min_value - (max_value - min_value) / y_marging, max_value + (max_value - min_value) / y_marging];
+if bounds(1) - bounds (2) > 0
+	ylim(bounds);
+end
 
 % Here come the general graph settings
 g_title = title(grapht);
@@ -228,6 +234,9 @@ else
 		end
 	end
 end
+
+%% Squeeze the plot to the left by factor <scale>
+set (gca, "position", get (0, "defaultaxesposition") + [0, 0, -1, 0] * scale)
 
 print(outf, ['-d' format], ['-F:' num2str(fonts)], ['-S' num2str(x_size) ',' num2str(y_size)]);
 

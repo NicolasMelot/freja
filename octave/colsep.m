@@ -54,7 +54,7 @@
 %             [1,3] = {{'label zero' 'label one' 'label two' 'label three'} {'label zero' 'label un' 'label deux' 'label trois'} {}(0x0) {}(0x0)}
 %             [1,4] = {{'zero' 'one' 'two' 'three'} {'zero' 'un' 'deux' trois'} {}(0x0) {}(0x0)}
 %	}
-%	b = separate(a, 'col1', 'col2', 0)
+%	b = colsep(a, 'col1', 'col2', 0)
 %	b = {
 %	      [1,1] =
 %		1 1 0 0 3 4
