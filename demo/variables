@@ -41,7 +41,7 @@ try=`seq 1 3`				# Number of different run per setting
 output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec comment1 comment2"
 
 ## Never allow experiments involving a try number two when exactly 2 threads are involved
-restrict='! ( match(try,^2$) && match(nb_threads,^3$) )'
+restrict='! ( match(try, "^2$") && match(nb_threads, "^3$") )'
 
 ## Give human-friendly aliases for every value of variables
 ## Order variables occurences

@@ -527,7 +527,8 @@ build_expression()
 	## Make sure we don't pattern match and eliminate nested parenthesis in the regular expression
 	## Example on how to match balanced and nested parenthesis: 
 	## http://stackoverflow.com/questions/14952113/how-can-i-matches-the-nested-brackets-by-regex
-	perl -i -pe 's/match\(([^,]*),(?:(\(([^()]|(?2))*\))|([^()]*))\)/echo \$line | match "$1" "$2$4"'"$sources"'/g'
+	#perl -i -pe 's/match\(([^,]*),(?:(\(([^()]|(?2))*\))|([^()]*))\)/echo \$line | match "$1" "$2$4"'"$sources"'/g'
+	perl -pe 's/match\(([^,]*)\s*,\s*"([^"]*)"\)/echo \$line | match "$1" "$2"'"$sources"'/g'
 }
 
 batch()
