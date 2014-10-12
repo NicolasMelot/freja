@@ -3,14 +3,21 @@
 log_start()
 {
 	echo -n "$@"
-	echo -n "$@" >> $logfile
 
+	if [ "$logfile" != "" ]
+	then
+		echo -n "$@" >> $logfile
+	fi
 }
 
 log_stop()
 {
 	echo "$@"
-	echo "$@" >> $logfile
+
+	if [ "$logfile" != "" ]
+	then
+		echo "$@" >> $logfile
+	fi
 }
 
 log()
@@ -21,7 +28,6 @@ log()
 
 run()
 {
-#	log "[CMD] " "$@"
 	$@
 }
 
@@ -250,17 +256,17 @@ convert_csv_to_m()
 		## We are in another process context; we need to reload the variable file
 		load_variables
 
+		## Keeps track if the value was found
+		local found=0
 		if [ "`eval echo '$'labels_$variable`" != "" ]
 		then
 			local counter=0
-			#echo '$'labels_$variable >&2
-			#eval echo '$'labels_$variable >&2
-			#eval echo '$'labels_$variable | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ >&2
 			while read j
 			do
 				local instance="`echo $j | cut -f 1 -d : | xargs echo`"
 				if [ "$instance" == "$value" ]
-				then	
+				then
+					found=1
 					break
 				else
 					counter=$(( $counter + 1 ))
@@ -273,6 +279,7 @@ convert_csv_to_m()
 			do
 				if [ "$j" == "$value" ]
 				then
+					found=1
 					break
 				else
 					counter=$(( $counter + 1 ))
@@ -280,9 +287,28 @@ convert_csv_to_m()
 			done < <(cat $tempfile | cut -f $myindex -d ' ' | sort -V | uniq)
 		fi
 
+		if [ "$found" == "0" ]
+		then
+			echo Could not 'find' a label 'for' value \"$value\" >&2
+		fi
+
 		echo -n "$counter "
 	}
 
+	local compile_instances=`count_args ${compile[@]}`
+        local dummy_compile=0
+
+        ## If there is no compilation setting, just let the running settings go once
+        if [ "$compile_instances" == "0" ]
+        then
+                compile_instances=1
+                eval ${compile[0]}=1
+                dummy_compile=1
+		all_columns="${run[@]} $output_columns"
+	else
+		all_columns="${compile[@]} ${run[@]} $output_columns"
+        fi
+	
 	local input="$1"
 	local output="$2"
 
@@ -301,7 +327,7 @@ convert_csv_to_m()
 	cat $input | tail -n +2 | tr -d '"' | tr ',' ' ' | sed "s/'/\\\'/g" > $temp/convert.$$.tmp
 	local counter=1
 	## For each variable, see if there is a label defined. If so, change the value to an index using sed
-	for i in ${compile[@]} ${run[@]} $output_columns
+	for i in $all_columns
 	do
 		## Convert every column for which there is an alias or if it is not a sequence of numbers
 		if [ "`eval echo '$'labels_$i`" != "" ] || ! is_number_seq `cat $temp/convert.$$.tmp|cut -f $counter -d ' '`
@@ -321,14 +347,14 @@ convert_csv_to_m()
 	echo -e $DATA_END >> $output
 
 	echo -e $COLUMNS_BEGIN >> $output
-	for i in ${compile[@]} ${run[@]} $output_columns
+	for i in $all_columns
 	do
 		echo -n "'"$i"' " | tr '_' ' ' >> $output
 	done		
 	echo -e $COLUMNS_END >> $output
 
 	echo -e $REF_BEGIN >> $output
-	for i in ${compile[@]} ${run[@]} $output_columns
+	for i in $all_columns
 	do
 		if [ "`eval echo '$'labels_$i`" != "" ]
 		then
@@ -346,7 +372,7 @@ convert_csv_to_m()
 	echo -e $REF_END >> $output
 
 	echo -e $SYMB_BEGIN >> $output
-	for i in ${compile[@]} ${run[@]} $output_columns
+	for i in $all_columns
 	do
 		if [ "`eval echo '$'labels_$i`" != "" ]
 		then
@@ -868,6 +894,10 @@ parse_options()
 					error Output file \"$output_file\" already exist. Delete or move it and try again
 					exit 1
 				fi
+			;;
+			"--log")
+				shift
+				logfile="$1"
 			;;
 			"--")
 				return 0
