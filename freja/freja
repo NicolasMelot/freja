@@ -371,10 +371,27 @@ merge_dir()
 	local output_file="$1"
 	shift
 
+	local compile_instances=`count_args ${compile[@]}`
+        local dummy_compile=0
+
+        ## If there is no compilation setting, just let the running settings go once
+        if [ "$compile_instances" == "0" ]
+        then
+                compile_instances=1
+                eval ${compile[0]}=1
+                dummy_compile=1
+        fi
+
 	info Merging all results to $output_file
 
 	## Take all column name and double quote them
-	echo ${compile[@]} ${run[@]} $output_columns | double_quotes > $output_file
+	if [ "$dummy_compile" == "0" ]
+	then
+		echo ${compile[@]} ${run[@]} $output_columns | double_quotes > $output_file
+	else
+		echo ${run[@]} $output_columns | double_quotes > $output_file
+	fi
+		
 	while [ "$#" != "0" ]
 	do
 		local input_dir=$1
@@ -385,6 +402,11 @@ merge_dir()
 			local counter=1
 			while read flags
 			do
+				if [ "$dummy_compile" != "0" ]
+				then
+					flags=""
+				fi
+
 				while read args
 				do
 					filename=$input_dir/${output_base}_$(echo $flags $args|tr ' ' _|tr -d '"')_${output_success}${output_extension}
@@ -398,6 +420,11 @@ merge_dir()
 	
 		shift
 	done
+
+	if [ "$dummy_compile" != "0" ]
+	then
+		eval ${compile[0]}=""
+	fi
 }
 
 compile()
@@ -864,7 +891,6 @@ finish() {
 	rm -rf $temp
 }
 trap finish EXIT 
-#trap finish EXIT 
 
 ## Fill up undefined options with default values
 if [ "`echo $restrict|xargs echo`" == "" ]
