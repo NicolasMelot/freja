@@ -79,7 +79,6 @@ is_number_seq()
 
 	if (( $# > 0 ))
 	then
-
 		is_number "$first"
 		local head=$?
 		is_number_seq $@
@@ -95,8 +94,11 @@ usage()
 {
 	echo 
 	echo
-	echo 'freja [compile | run] <experiment> [--instance <instance name>]'
+	echo 'freja [ compile | [ run | merge | label ] <experiment> | fuse <column> <list of csv filenames> |'
+	echo '		convert <csv filename> ] [--instance <instance name>]'
 	echo '	[--retry [[--number | -n <numbers>] | [--pattern | -p <expression>] | --all] [--retry-only]]'
+	echo '	[--variables <variable filename> ] [--compile <compilation script> ] [--run <run script> ] [--log <log file> ]'
+	echo '  [--output <output file> ]'
 	echo
 	echo "	<experiment>	Space-free, filename-valid string that name a category of the experiment batch being run."
 	echo "				The results of all batches of the same category are merge together without any"
@@ -239,6 +241,18 @@ build_aliases()
 			echo -n \\\"$instance\\\" = \\\"$label\\\"', '
 		done | rev | cut -f 1 -d ',' --complement | rev | xargs echo -n
 		echo ")"
+	else
+		## Output the column name ready to receive the vector
+		echo -en "\tcolumns = c("
+
+		## Iterate through all pairs (key,label)
+		eval echo '$'output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -v ^$ | while read j
+		do
+			instance="$j"
+			label="`echo $j | tr '_' ' ' | xargs echo`"
+			echo -n \\\"$instance\\\" = \\\"$label\\\"', '
+		done | rev | cut -f 1 -d ',' --complement | rev | xargs echo -n
+		echo ")"
 	fi
 	## Close the list
 	echo ")"
@@ -273,7 +287,7 @@ convert_csv_to_m()
 				fi
 			done < <(eval echo '$'labels_$variable | tr ";" \\\n | xargs -L 1 echo | grep -v ^$)
 		else
-			local myindex="`echo ${compile[@]} ${run[@]} $output_columns | tr ' ' \\\n | grep -n $variable | cut -f 1 -d :`"
+			local myindex="`echo ${compile[@]} ${run[@]} $output_columns | tr ' ' \\\n | grep -n '^'$variable'$' | cut -f 1 -d :`"
 			local counter=0
 			while read j
 			do
@@ -330,8 +344,13 @@ convert_csv_to_m()
 	for i in $all_columns
 	do
 		## Convert every column for which there is an alias or if it is not a sequence of numbers
-		if [ "`eval echo '$'labels_$i`" != "" ] || ! is_number_seq `cat $temp/convert.$$.tmp|cut -f $counter -d ' '`
+		if [ "`eval echo '$'labels_$i`" != "" ] || ! is_number_seq `cat $temp/convert.$$.tmp | cut -f $counter -d ' '`
 		then
+			## TODO: accelerate (drastically)
+			## Collapse the column into only one occurence of all symbols found
+			## For each symbol found, calculate its index (and make up index with a warning if necessary, dont forget to append it to the label list) and synthetise a replacement regex that matches all occurences of this symbol but only on the correct column. Finally, apply the synthetized replacement regex to the whole file.
+
+			## That crap is waaaaayyy to slow
 			if [ "`eval echo '$'labels_$i`" == "" ]
 			then
 				eval labels_$i=\"`cat $temp/convert.$$.tmp | sed "s/'/\\\'/g" | cut -f $counter -d ' ' | sort -V | uniq | tr \\\n ';'`\"
@@ -917,11 +936,13 @@ parse_options()
 
 ## Catch exit events to clean up temporary files
 ## http://redsymbol.net/articles/bash-exit-traps/
-
 finish() {
 	rm -rf $temp
 }
 trap finish EXIT 
+
+## Force decimal separator as a dot "." as in american english
+export LC_NUMERIC="en_US.UTF-8"
 
 ## Fill up undefined options with default values
 if [ "`echo $restrict|xargs echo`" == "" ]
