@@ -114,20 +114,22 @@ function out = shuffle(table, cols, refs)
 
 		%% Initialise an empty alias collection
 		aliases{i} = {};
+		new_ref{i}  = {};
 		old_ref = ref(table, {cols{i}});
 		old_ref = old_ref{:};
 		old_alias = alias(table, {cols{i}});
 		old_alias = old_alias{:};
 
-		for j = 1:size_old
+		for j = 1:size_new
 			ref_index = cellfindstr(old_ref, refs{i}{j});
-			if ref_index < 1
-				continue;
-				%error(['Could not find alias ''' refs{i}{j} ''' in existing aliases for column ''' cols{i} '''.']);
-			end
 			tmp_alias = aliases{i};
-			aliases{i} = {tmp_alias{:}, old_alias{ref_index}};
+			tmp_ref = new_ref{i};
+			if ref_index > 0
+				aliases{i} = {tmp_alias{:}, old_alias{ref_index}};
+				new_ref{i} = {tmp_ref{:}, old_ref{ref_index}};
+			end
 		end
+
 		if ref_index < 1
 			continue;
 		end
@@ -139,7 +141,9 @@ function out = shuffle(table, cols, refs)
 			old_ref_val = old_ref{value};
 
 			%% Find the new index for this ref
-			new_index = cellfindstr(refs{i}, old_ref_val);
+			%new_index = cellfindstr(refs{i}, old_ref_val);
+			%new_ref{i}
+			new_index = cellfindstr(new_ref{i}, old_ref_val);
 			if new_index < 1
 				continue;
 				%error(['Could not find ref ''' old_ref_val ''' in new refs for column ''' cols{i} '''.']);
@@ -161,7 +165,8 @@ function out = shuffle(table, cols, refs)
 	
 		matrix = [matrix(:, 1:col_index - 1) new_vector matrix(:, col_index + 1:matrix_size)];
 		table = setd(table, matrix);
-		ref_out{col_index} = refs{i};
+		%ref_out{col_index} = refs{i}
+		ref_out{col_index} = new_ref{i};
 
 		alias_out{col_index} = aliases{i};
 	end

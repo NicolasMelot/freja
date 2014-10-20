@@ -74,20 +74,30 @@ is_number()
 ## Returns true if all space-separated elements of $@ (regardless of double quotes) are an integers or decimal value
 is_number_seq()
 {
-	local first="$1"
-	shift
+	res=0
+	for i in $@
+	do
+		if ! is_number $i
+		then
+			res=1
+		fi
+	done
 
-	if (( $# > 0 ))
-	then
-		is_number "$first"
-		local head=$?
-		is_number_seq $@
-		local tail=$?
-
-		return $(($head || $tail))
-	else
-		is_number "$first"
-	fi
+	return $res
+#	local first="$1"
+#	shift
+#
+#	if (( $# > 0 ))
+#	then
+#		is_number "$first"
+#		local head=$?
+#		is_number_seq $@
+#		local tail=$?
+#
+#		return $(($head || $tail))
+#	else
+#		is_number "$first"
+#	fi
 }
 
 usage()
@@ -367,7 +377,7 @@ convert_csv_to_m()
 
 				## If this symbol has a single quote, escape it twice so it matches the table, and sed doesn't mess with the single quote
 				symbol="`echo $symbol | sed "s/'/\\\\\'/g" `"
-				cat $temp/convert.$$.tmp | sed 's/\(\([^ ]\+ \)\{'$(( $counter - 1 ))'\}\)\('$symbol'\)\([^$]*\)$/\1'$index'\4/g' > $temp/convert.$$.filtered.tmp
+				cat $temp/convert.$$.tmp | sed 's/\(\([^ ]\+ \)\{'$(( $counter - 1 ))'\}\)\('$symbol'\)\( [^$]*\)$/\1'$index'\4/g' > $temp/convert.$$.filtered.tmp
 				cat $temp/convert.$$.filtered.tmp | tr -s ' ' > $temp/convert.$$.tmp
 			done
 
@@ -415,7 +425,7 @@ convert_csv_to_m()
 			eval echo '$'labels_$i | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ | while read j
 			do
 				local label="`echo $j | cut -f 1 -d : --complement | sed "s/'/"'"'"'"'"'"/g" | xargs echo | sed "s/'/''/g"`"
-				echo -n "'"$label"' " >> $output
+				echo -n "'"$label"' " | tr _ ' ' | tr '~' _ >> $output
 			done
 			echo -n '} ' >> $output
 		else
