@@ -44,7 +44,7 @@ plot = ggplot() +
   ylab("Running time in seconds") +
   xlab(label("nb_threads")) +
   ggtitle("Running time for empty loops") + 
-  scale_fill_manual(values = colorRampPalette(c("#FF0000", "#000000"))(5)) +
+  scale_fill_manual(values = colorRampPalette(c("#FF0000", "#000000"))(9)) +
   scale_colour_manual(values = c("#771C19", "#B6C5CC"))
 ## Save the plot as a svg file
 ggsave(file="1_timing.svg", plot=plot, width=8, height=6)
@@ -65,7 +65,7 @@ plot = ggplot() +
   ylab("Running time in seconds") +
   xlab(label("nb_threads")) +
   ggtitle("Running time for empty loops") + 
-  scale_fill_manual(values = colorRampPalette(c("#FF0000", "#000000"))(5)) +
+  scale_fill_manual(values = colorRampPalette(c("#FF0000", "#000000"))(9)) +
   scale_colour_manual(values = c("#771C19", "#B6C5CC"))
 ## Save the plot as a svg file
 ggsave(file="2_timing-100.svg", plot=plot, width=8, height=6)
@@ -86,7 +86,7 @@ plot = ggplot() +
   ylab("Running time in seconds") +
   xlab(label("nb_threads")) +
   ggtitle("Running time for empty loops") + 
-  scale_fill_manual(values = colorRampPalette(c("#FF0000", "#000000"))(5)) +
+  scale_fill_manual(values = colorRampPalette(c("#FF0000", "#000000"))(9)) +
   scale_colour_manual(values = c("#771C19", "#B6C5CC"))
 
 ## Save the plot as a svg file

@@ -30,7 +30,7 @@
 ## Compile-time settings
 compile=(entropy nb_threads)
 entropy="0.4"				# Randomness in the calculation time
-nb_threads="seq. over. `seq 2 4`"
+nb_threads="seq. over. `seq 2 8`"
 
 ## Run-time settings
 run=(count try)
