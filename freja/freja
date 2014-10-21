@@ -233,6 +233,7 @@ build_aliases()
 				label="`echo $j | cut -f 1 -d : --complement | xargs echo`"
 				echo -n \\\"$instance\\\" = \\\"$label\\\"', '
 			done | rev | cut -f 1 -d ',' --complement | rev | xargs echo -n
+
 			echo "),"
 		fi
 	done
@@ -256,7 +257,7 @@ build_aliases()
 		echo -en "\tcolumns = c("
 
 		## Iterate through all pairs (key,label)
-		eval echo '$'output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -v ^$ | while read j
+		eval echo ${compile[@]} ${run[@]} '$'output_columns | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -v ^$ | while read j
 		do
 			instance="$j"
 			label="`echo $j | tr '_' ' ' | xargs echo`"
