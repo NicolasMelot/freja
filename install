@@ -1,0 +1,39 @@
+#!/bin/bash
+
+echo $0
+echo $@
+
+exit 0
+
+## Move into the right directory
+cd `dirname $(realpath $0)`
+
+echo This will install freja in your account.
+echo The installation operations include:
+echo * Place files for freja in $HOME/.freja
+echo * Place a link to freja executable in $HOME/.local/bin
+echo * Update $HOME/.bashrc to add $HOME/.local/bin to \$PATH
+echo Continue (y/[n])?
+read proceed
+
+if [ "$proceed" == "y" ]
+then
+	## Create directories, if needed
+	mkdir -p $HOME/.local/bin
+	mkdir -p $HOME/.freja
+
+	## Copy freja's files
+	cp freja/* $HOME/.freja
+	ln -s $HOME/.freja/freja $HOME/.local/bin/
+
+	## Update $HOME/.bashrc
+	echo export PATH=$PATH:$HOME/.local/bin
+	echo Installation done.
+	echo Source $HOME/.bashrc with the command below
+	echo
+	echo . $HOME/.bashrc
+	echo
+	echo or end your session and login again to reflect the change.
+else
+	echo No change performed
+fi

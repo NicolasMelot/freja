@@ -425,7 +425,7 @@ convert_csv_to_m()
 			eval echo '$'labels_$i | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ | while read j
 			do
 				local label="`echo $j | cut -f 1 -d : --complement | sed "s/'/"'"'"'"'"'"/g" | xargs echo | sed "s/'/''/g"`"
-				echo -n "'"$label"' " | tr _ ' ' | tr '~' _ >> $output
+				echo -n "'"$label"' " >> $output
 			done
 			echo -n '} ' >> $output
 		else
