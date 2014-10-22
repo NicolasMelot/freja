@@ -38,7 +38,7 @@ count="100000000 200000000"		# amount of data to be written to main memory
 try=`seq 1 3`				# Number of different run per setting
 
 ## Run-time data
-output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec comment1 comment2"
+output_columns="thread start_time_sec start_time_nsec stop_time_sec stop_time_nsec thread_start_sec thread_start_nsec thread_stop_sec thread_stop_nsec comment"
 
 ## Never allow experiments involving a try number two when exactly 2 threads are involved
 restrict='! ( match(try, "^2$") && match(nb_threads, "^3$") )'
@@ -47,7 +47,7 @@ restrict='! ( match(try, "^2$") && match(nb_threads, "^3$") )'
 ## Order variables occurences
 ## Skip the label if all you want is to arrange occurences in order, and use these occurrences name as labels
 ## Note that all labels are left and right trimmed
-labels_nb_threads="seq.: Sequential; over.: Overhead;2;3;4"
+labels_nb_threads="seq.: Sequential; over.: Overhead"
 labels_count="100000000:10^8; 200000000: 20^8"
 labels_thread="0:Thread 1 (seq.); 1: Thread 1; 2: Thread 2; 3: Thread 3; 4: Thread 4; 5: Thread 5; 6: Thread 6; 7: Thread 7; 8: Thread 8"
 labels_columns="entropy: Entropy; nb_threads: Number of threads; count: Number of iterations; try: Attempt; thread: Thread;"

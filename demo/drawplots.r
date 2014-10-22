@@ -7,7 +7,7 @@ library(plyr)
 ## Read the data set
 data.frame = read.csv("table.csv")
 
-## Load labels and labelling functions
+## Load labels and labeling functions
 source("labels.r")
 
 ## Define a function to convert nanoseconds to seconds

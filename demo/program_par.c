@@ -103,5 +103,7 @@ main(int argc, char ** argv)
   count = atoi(argv[1]);
   do_work(count, ENTROPY);
 
-  return 0;
+  // Simulate occasional running failures
+  srand(time(NULL));
+  return !(random() % 6);
 }
