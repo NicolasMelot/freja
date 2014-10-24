@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Move into the right directory
-cd `dirname $(realpath $0)`
+cd `dirname $0`
 
 echo This will install freja in your account.
 echo The installation operations include:
@@ -19,26 +19,34 @@ then
 
 	## Copy freja's files
 	cp freja/* $HOME/.freja
-	ln -s $HOME/.freja/freja $HOME/.local/bin/
+	if [ ! -f $HOME/.local/bin/freja ]
+	then
+		ln -s $HOME/.freja/freja $HOME/.local/bin/
+	fi
 
-	## Update $HOME/.bashrc
+	## Backup $HOME/.bashrc
 	if [ -f $HOME/.bashrc ]
 	then
 		echo Create backup for $HOME/.bashrc in $HOME/.bashrc.freja.$$.bak
 		cp $HOME/.bashrc $HOME/.bashrc.freja.$$.bak
 	fi
 
+	## Backup $HOME/.bashrc
+	if [ -f $HOME/.tcshrc ]
+	then
+		echo Create backup for $HOME/.tcshrc in $HOME/.tcshrc.freja.$$.bak
+		cp $HOME/.tcshrc $HOME/.tcshrc.freja.$$.bak
+	fi
+
 	## Inform the use about the success of installation
 	echo
-	echo >> $HOME/.bashrc
-	echo '## Add the local hierarchy ~/.local/bin (that contains freja executable) into $PATH' >> $HOME/.bashrc
-	echo export PATH=$PATH:$HOME/.local/bin >> $HOME/.bashrc
+	echo | tee -a $HOME/.tcshrc >> $HOME/.bashrc
+	echo '## Add the local hierarchy ~/.local/bin (that contains freja executable) into $PATH' | tee -a $HOME/.tcshrc >> $HOME/.bashrc
+	echo export PATH="$PATH:$HOME/.local/bin" >> $HOME/.bashrc
+	echo setenv PATH "$PATH:$HOME/.local/bin" >> $HOME/.tcshrc
 	echo Installation done.
-	echo Source $HOME/.bashrc with the command below
 	echo
-	echo . $HOME/.bashrc
-	echo
-	echo or end your session and login again to reflect the change.
+	echo End your session and login again to reflect the change.
 else
 	echo No change performed
 fi
