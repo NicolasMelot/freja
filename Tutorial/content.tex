@@ -1,11 +1,15 @@
-% TODO: 
-% * Mention rdtsc() as replacement for a clock DONE
-% * Update run and compile to return a success or failure value DONE
-% * Clarify in case study: entropy parameter is only an illusrative artificial parameter to create randomness in measurements DONE
-% * Update data format description in data.m UNREQUIRED
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=7cm]{images/Freya_by_Johannes_Gehrts.eps}
+\caption{Freyja (by Johannes Gehrts, 1901), or Freja in Swedish, goddess of love, sexuality, beauty, fertility, gold, seidhr, war, and death in the nordic mythology, represented with the two cats that pull her chariot.}
+\end{figure}
 
 \section{Introduction}
-Measuring and representing the performance of an algorithm represents quite a tedious task. Such activity requires a constant monitoring and intervention to collect data from an experiment, start the next one and check if everything works as expected. Such constant attention is error-prone. Once the data has been fully collected, it is often cumbersome and also error-prone to reshape it to a meaningful format such as a graph, or a format allowing the computation of such graph. There are many benefits in automatizing this process: making it autonomous, more reliable or faster.
+Measuring and representing the performance of an algorithm represents quite a tedious task. Such activity requires a constant monitoring and intervention to collect data from an experiment, start the next one and check if everything works as expected.
+Such constant attention is error-prone. Once the data has been fully collected, it is often cumbersome and also error-prone to reshape it to a meaningful format such as a graph, or a format allowing the computation of such graph.
+There are many benefits in automatizing this process: making it autonomous, more reliable or faster.
+Freyja (Freja in Swedish), goddess of love, sexuality, beauty, fertility, gold, seidhr (some type of sorcery), war, and death in the old Nordic mythology, also a research aiding automation tool, proposes to assist researchers with their permanent struggle managing experiments and to produce strong and meaningful data thanks to an automatized process. This data can be interpreted by analysis tool such as R to produce publishable-quality visual representations of this data. 
 
 The document introduces here a very simplified case study, where it is proposed to demonstrate the scalability of a multi-threaded program whose ``computation'' consists in achieving a given number of jumps through a loop. The sequential version takes the complete loop sequentially whereas the parallel implementation splits this loops in smaller chunks and distributes it equally among all threads. The performance of this program is monitored and plotted following a workflow and using Freja and R or Octave/Matlab, that are introduced along the solving of this case study. The language used in this work is {C}, but any other programming language should work equally well. The data can be process using either R, an open source ``system for statistical computation and graphics''~\cite{hornik14} or Octave/Matlab. Although R is preferred for data analysis and graph production, users familar with Matlab scripting can use Matlab, or its open-source implementation Octave as well as a set of data analysis primitives described in this document, to produce meaningful representations of the data produced. Section~\ref{sec:files} lists and briefly describes each files provided by Freja. Section~\ref{sec:problem} introduces the problem that illustrates this case study. Section~\ref{sec:process} details all the necessary steps to instrument a program, collect the results and use it to generate comprehensive representations. Finally, section~\ref{sec:conclusion} concludes the document.
 

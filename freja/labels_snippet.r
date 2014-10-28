@@ -16,7 +16,7 @@ apply_labels = function(data.frame, labels.list = labels)
       labels = as.character(labels.list[[col]])
       
       ## Pad missing labels with values as they appear in data
-      if(length(levels(data.frame[,col])) > length(names(labels.list[[col]])))
+      if(!all(levels(data.frame[,col]) %in% names(labels.list[[col]])))
       {
         ## Levels of data.frame, where levels that appear in labels appear first and ordered as in the list
         levels = unique(c(names(labels.list[[col]]), levels(data.frame[,col])))
