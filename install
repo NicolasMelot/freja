@@ -40,7 +40,12 @@ install_tcsh()
 
 	echo >> $HOME/.tcshrc
 	echo $shell_comment >> $HOME/.tcshrc
-	echo setenv $shell_var "'$'$shell_var:$shell_val" >> $HOME/.tcshrc	
+	echo >> $HOME/.tcshrc
+	echo 'if ($?'$shell_var') then' >> $HOME/.tcshrc
+	echo '	setenv' $shell_var '${'"$shell_var}:$shell_val" >> $HOME/.tcshrc
+	echo 'else' >> $HOME/.tcshrc
+	echo '	setenv' "$shell_var $shell_val" >> $HOME/.tcshrc
+	echo 'endif' >> $HOME/.tcshrc
 }
 
 if [ "$proceed" == "y" ]
@@ -65,7 +70,7 @@ then
 			install_tcsh
 		;;
 		*)
-			echo '[WARN]' Don"'"t know how to setup `getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' --complement | rev` to update $shell_var at startup.
+			echo '[WARN]' Don"'"t know how to setup `getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev` to update $shell_var at startup.
 		;;
 	esac
 
