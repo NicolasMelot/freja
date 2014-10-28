@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Move into the right directory
-cd `dirname $(realpath $0)`
+cd `dirname $0`
 
 echo This will install freja in your account.
 echo The installation operations include:
@@ -11,6 +11,44 @@ echo '*' Update $HOME/.bashrc to add $HOME/.local/bin to \$PATH
 echo Continue '(y/[n])'?
 read proceed
 
+shell_comment='## Add the local hierarchy ~/.local/bin (that contains freja executable) into $PATH'
+shell_var=PATH
+shell_val=$HOME/.local/bin
+
+install_bash()
+{
+	## Backup $HOME/.bashrc
+	if [ -f $HOME/.bashrc ]
+	then
+		echo Create backup for $HOME/.bashrc in $HOME/.bashrc.freja.$$.bak
+		cp $HOME/.bashrc $HOME/.bashrc.freja.$$.bak
+	fi
+
+	echo >> $HOME/.bashrc
+	echo >> $HOME/.bashrc
+	echo $shell_comment >> $HOME/.bashrc
+	echo export $shell_var='$'"$shell_var:$shell_val" >> $HOME/.bashrc
+}
+
+install_tcsh()
+{
+	## Backup $HOME/.tschrc
+	if [ -f $HOME/.tcshrc ]
+	then
+		echo Create backup for $HOME/.tcshrc in $HOME/.tcshrc.freja.$$.bak
+		cp $HOME/.tcshrc $HOME/.tcshrc.freja.$$.bak
+	fi
+
+	echo >> $HOME/.tcshrc
+	echo $shell_comment >> $HOME/.tcshrc
+	echo >> $HOME/.tcshrc
+	echo 'if ($?'$shell_var') then' >> $HOME/.tcshrc
+	echo '	setenv' $shell_var '${'"$shell_var}:$shell_val" >> $HOME/.tcshrc
+	echo 'else' >> $HOME/.tcshrc
+	echo '	setenv' "$shell_var $shell_val" >> $HOME/.tcshrc
+	echo 'endif' >> $HOME/.tcshrc
+}
+
 if [ "$proceed" == "y" ]
 then
 	## Create directories, if needed
@@ -19,26 +57,27 @@ then
 
 	## Copy freja's files
 	cp freja/* $HOME/.freja
-	ln -s $HOME/.freja/freja $HOME/.local/bin/
-
-	## Update $HOME/.bashrc
-	if [ -f $HOME/.bashrc ]
+	if [ ! -f $HOME/.local/bin/freja ]
 	then
-		echo Create backup for $HOME/.bashrc in $HOME/.bashrc.freja.$$.bak
-		cp $HOME/.bashrc $HOME/.bashrc.freja.$$.bak
+		ln -s $HOME/.freja/freja $HOME/.local/bin/
 	fi
 
-	## Inform the use about the success of installation
-	echo
-	echo >> $HOME/.bashrc
-	echo '## Add the local hierarchy ~/.local/bin (that contains freja executable) into $PATH' >> $HOME/.bashrc
-	echo export PATH=$PATH:$HOME/.local/bin >> $HOME/.bashrc
+	## Update the shell
+	case "`getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev`" in
+		"bash")
+			install_bash
+		;;
+		"tcsh")
+			install_tcsh
+		;;
+		*)
+			echo '[WARN]' Don"'"t know how to setup `getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev` to update $shell_var at startup.
+		;;
+	esac
+
 	echo Installation done.
-	echo Source $HOME/.bashrc with the command below
 	echo
-	echo . $HOME/.bashrc
-	echo
-	echo or end your session and login again to reflect the change.
+	echo End your session and login again to reflect the change.
 else
 	echo No change performed
 fi
