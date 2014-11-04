@@ -7,7 +7,7 @@ echo This will install freja in your account.
 echo The installation operations include:
 echo '*' Place files for freja in $HOME/.freja
 echo '*' Place a link to freja executable in $HOME/.local/bin
-echo '*' Update $HOME/.bashrc to add $HOME/.local/bin to \$PATH
+echo '*' Update $HOME/.bash_profile to add $HOME/.local/bin to \$PATH
 echo Continue '(y/[n])'?
 read proceed
 
@@ -17,17 +17,17 @@ shell_val=$HOME/.local/bin
 
 install_bash()
 {
-	## Backup $HOME/.bashrc
-	if [ -f $HOME/.bashrc ]
+	## Backup $HOME/.bash_profile
+	if [ -f $HOME/.bash_profile ]
 	then
-		echo Create backup for $HOME/.bashrc in $HOME/.bashrc.freja.$$.bak
-		cp $HOME/.bashrc $HOME/.bashrc.freja.$$.bak
+		echo Create backup for $HOME/.bash_profile in $HOME/.bash_profile.freja.$$.bak
+		cp $HOME/.bash_profile $HOME/.bash_profile.freja.$$.bak
 	fi
 
-	echo >> $HOME/.bashrc
-	echo >> $HOME/.bashrc
-	echo $shell_comment >> $HOME/.bashrc
-	echo export $shell_var='$'"$shell_var:$shell_val" >> $HOME/.bashrc
+	echo >> $HOME/.bash_profile
+	echo >> $HOME/.bash_profile
+	echo $shell_comment >> $HOME/.bash_profile
+	echo export $shell_var='$'"$shell_var:$shell_val" >> $HOME/.bash_profile
 }
 
 install_tcsh()
