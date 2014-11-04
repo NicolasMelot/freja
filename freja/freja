@@ -773,7 +773,7 @@ match()
 	local index=`eval echo $vars | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -n ^$variable$ | cut -f 1 -d :`
 
 	read line
-	if [ "`echo $line|cut -f $index -d ' '|sed '/'"$expression"'/!d'`" != "" ]
+	if [ "`echo $line | cut -f 1 -d : --complement | cut -f $index -d ' ' | sed '/'"$expression"'/!d'`" != "" ]
 	then
 		return 0
 	else

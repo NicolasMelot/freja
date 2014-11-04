@@ -25,7 +25,6 @@ install_bash()
 	fi
 
 	echo >> $HOME/.bash_profile
-	echo >> $HOME/.bash_profile
 	echo $shell_comment >> $HOME/.bash_profile
 	echo export $shell_var='$'"$shell_var:$shell_val" >> $HOME/.bash_profile
 }
