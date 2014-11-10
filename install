@@ -7,7 +7,18 @@ echo This will install freja in your account.
 echo The installation operations include:
 echo '*' Place files for freja in $HOME/.freja
 echo '*' Place a link to freja executable in $HOME/.local/bin
-echo '*' Update $HOME/.bash_profile to add $HOME/.local/bin to \$PATH
+## Update the shell
+case "`getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev`" in
+	"bash")
+		echo '*' Update $HOME/.bash_profile to add $HOME/.local/bin to \$PATH
+	;;
+	"tcsh")
+		echo '*' Update $HOME/.cshrc to add $HOME/.local/bin to \$PATH
+	;;
+	*)
+		:
+	;;
+esac
 echo Continue '(y/[n])'?
 read proceed
 
@@ -29,23 +40,23 @@ install_bash()
 	echo export $shell_var='$'"$shell_var:$shell_val" >> $HOME/.bash_profile
 }
 
-install_tcsh()
+install_csh()
 {
-	## Backup $HOME/.tschrc
-	if [ -f $HOME/.tcshrc ]
+	## Backup $HOME/.schrc
+	if [ -f $HOME/.cshrc ]
 	then
-		echo Create backup for $HOME/.tcshrc in $HOME/.tcshrc.freja.$$.bak
-		cp $HOME/.tcshrc $HOME/.tcshrc.freja.$$.bak
+		echo Create backup for $HOME/.cshrc in $HOME/.cshrc.freja.$$.bak
+		cp $HOME/.cshrc $HOME/.cshrc.freja.$$.bak
 	fi
 
-	echo >> $HOME/.tcshrc
-	echo $shell_comment >> $HOME/.tcshrc
-	echo >> $HOME/.tcshrc
-	echo 'if ($?'$shell_var') then' >> $HOME/.tcshrc
-	echo '	setenv' $shell_var '${'"$shell_var}:$shell_val" >> $HOME/.tcshrc
-	echo 'else' >> $HOME/.tcshrc
-	echo '	setenv' "$shell_var $shell_val" >> $HOME/.tcshrc
-	echo 'endif' >> $HOME/.tcshrc
+	echo >> $HOME/.cshrc
+	echo $shell_comment >> $HOME/.cshrc
+	echo >> $HOME/.cshrc
+	echo 'if ($?'$shell_var') then' >> $HOME/.cshrc
+	echo '	setenv' $shell_var '${'"$shell_var}:$shell_val" >> $HOME/.cshrc
+	echo 'else' >> $HOME/.cshrc
+	echo '	setenv' "$shell_var $shell_val" >> $HOME/.cshrc
+	echo 'endif' >> $HOME/.cshrc
 }
 
 if [ "$proceed" == "y" ]
@@ -67,7 +78,7 @@ then
 			install_bash
 		;;
 		"tcsh")
-			install_tcsh
+			install_csh
 		;;
 		*)
 			echo '[WARN]' Don"'"t know how to setup `getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev` to update $shell_var at startup.
