@@ -11,6 +11,7 @@ echo '*' Place a link to freja executable in $HOME/.local/bin
 case "`getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev`" in
 	"bash")
 		echo '*' Update $HOME/.bash_profile to add $HOME/.local/bin to \$PATH
+		echo '*' Update $HOME/.bashrc to add $HOME/.local/bin to \$PATH
 	;;
 	"tcsh")
 		echo '*' Update $HOME/.cshrc to add $HOME/.local/bin to \$PATH
@@ -28,35 +29,41 @@ shell_val=$HOME/.local/bin
 
 install_bash()
 {
+	## $1 is the file in which we want to output the additional commands
+	filename="$1"
+
 	## Backup $HOME/.bash_profile
-	if [ -f $HOME/.bash_profile ]
+	if [ -f "$filename" ]
 	then
-		echo Create backup for $HOME/.bash_profile in $HOME/.bash_profile.freja.$$.bak
-		cp $HOME/.bash_profile $HOME/.bash_profile.freja.$$.bak
+		echo Create backup for $filename in ${filename}.freja.$$.bak
+		cp "$filename" "${filename}.freja.$$.bak"
 	fi
 
-	echo >> $HOME/.bash_profile
-	echo $shell_comment >> $HOME/.bash_profile
-	echo export $shell_var='$'"$shell_var:$shell_val" >> $HOME/.bash_profile
+	echo >> $filename
+	echo $shell_comment >> $filename
+	echo export $shell_var='$'"$shell_var:$shell_val" >> $filename
 }
 
 install_csh()
 {
+	## $1 is the file in which we want to output the additional commands
+	filename="$1"
+
 	## Backup $HOME/.schrc
-	if [ -f $HOME/.cshrc ]
+	if [ -f "$filename" ]
 	then
-		echo Create backup for $HOME/.cshrc in $HOME/.cshrc.freja.$$.bak
-		cp $HOME/.cshrc $HOME/.cshrc.freja.$$.bak
+		echo Create backup for $filename in ${filename}.cshrc.freja.$$.bak
+		cp $filename ${filename}.freja.$$.bak
 	fi
 
-	echo >> $HOME/.cshrc
-	echo $shell_comment >> $HOME/.cshrc
-	echo >> $HOME/.cshrc
-	echo 'if ($?'$shell_var') then' >> $HOME/.cshrc
-	echo '	setenv' $shell_var '${'"$shell_var}:$shell_val" >> $HOME/.cshrc
-	echo 'else' >> $HOME/.cshrc
-	echo '	setenv' "$shell_var $shell_val" >> $HOME/.cshrc
-	echo 'endif' >> $HOME/.cshrc
+	echo >> $filename
+	echo $shell_comment >> $filename
+	echo >> $filename
+	echo 'if ($?'$shell_var') then' >> $filename
+	echo '	setenv' $shell_var '${'"$shell_var}:$shell_val" >> $filename
+	echo 'else' >> $filename
+	echo '	setenv' "$shell_var $shell_val" >> $filename
+	echo 'endif' >> $filename
 }
 
 if [ "$proceed" == "y" ]
@@ -75,10 +82,11 @@ then
 	## Update the shell
 	case "`getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev`" in
 		"bash")
-			install_bash
+			install_bash $HOME/.bash_profile
+			install_bash $HOME/.bashrc
 		;;
 		"tcsh")
-			install_csh
+			install_csh $HOME/.cshrc
 		;;
 		*)
 			echo '[WARN]' Don"'"t know how to setup `getent passwd $LOGNAME | cut -d: -f7 | rev | cut -f 1 -d '/' | rev` to update $shell_var at startup.
