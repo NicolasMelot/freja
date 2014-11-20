@@ -589,7 +589,6 @@ batch()
 		fi'
 	done | tee $temp/freja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
 	local total_instances="`echo $restrict_instances | wc -w`"
-	#local total_instances=$(($run_instances * $compile_instances))
 
         ## Do not do anything if there is no instance to compile or run
         if [ "$total_instances" == "0" ]
@@ -606,7 +605,7 @@ batch()
 		## Make up the complete list of settings to run and filter them using the expression
 		retry_numbers="`build_args ${compile[@]} ${run[@]} | grep -n ''| while read line
 		do
-			eval 'if' $retry_expr '
+			eval 'if' $retry_expr ' 
 			then
 				echo $line
 			fi'
@@ -633,6 +632,7 @@ batch()
 	local compile_counter=0
 	local batch_time=0
 	local skipped=0
+	local filtered_counter=0
 
 	while read flags
 	do
@@ -645,9 +645,10 @@ batch()
 
 		while read args
 		do
-			## If this instance id not part of the compbination filtered with the restricted expression, then go directly to the next without even counting it
+			## If this instance id not part of the combination filtered with the restricted expression, then go directly to the next without even counting it
 			if [ "`cat $temp/freja.$$.restricted|cut -f 2 -d :|grep "$flags $args"`" == "" ]
 			then
+				filtered_counter=$(( $filtered_counter + 1 ))
 				continue
 			fi
 
@@ -655,7 +656,7 @@ batch()
 			local instance_number=$(($instance_number + 1))
 	
 			## If this instance has been cut through the retry option, then skip it (while still counting it)
-			if [ "$retry_only" != "" ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$instance_number$`" == "" ]
+			if [ "$retry_only" != "" ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$(($instance_number + $filtered_counter))$`" == "" ]
 			then
 				run_counter=$(($run_counter + 1))
 				continue
@@ -672,7 +673,7 @@ batch()
 			local basename=${output_base}_${instance_name}
 
 			## Only run this experiment if there is no output for this one
-			if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$instance_number$`" == "" ]
+			if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$(($instance_number + filtered_counter))$`" == "" ]
 			then
 				local outcome="Skipped"
 				local skipped=$(($skipped + 1))
@@ -994,7 +995,7 @@ experiment=""
 operation=""
 
 ## Parse all options
-eval parse_options `for i in "$@"; do printf "\"%s\" " "$i"; done; echo`
+eval parse_options `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
 
 if [ "$script_settings" != "" ]
 then
