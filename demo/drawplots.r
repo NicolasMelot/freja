@@ -4,6 +4,8 @@
 library(ggplot2)
 library(plyr)
 
+options(error = function() {traceback(2); dump.frames; stopifnot(FALSE)})
+
 ## Read the data set
 data.frame = read.csv("table.csv")
 
