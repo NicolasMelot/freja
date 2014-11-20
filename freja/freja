@@ -512,7 +512,7 @@ compile()
 	build_args ${compile[@]}|while read args; do
 		info_start Setting $compile_counter/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 		instance_start=`date +%s`
-		bash $script_compile $args 2>&1 > /dev/null
+		bash $script_compile $args 2>&1 >/dev/null | while read line; do log $line; done
 		success=$?
 
 		instance_stop=`date +%s`
@@ -680,7 +680,7 @@ batch()
 				## Output the experiment output header
 				## Reduces tabs and spaces to a single space, turn them to commas and frame them with double quotes
 				echo $output_columns | double_quotes > $output_dir/${basename}_$output_progress$output_extension
-				bash $script_run $flags $args | while read line;
+				bash $script_run $flags $args 2> >(cat | while read stderr; do log $stderr; done >&2) | while read line;
 				do
 					## Replace single quotes with double quotes, insert commas between fields
 					echo $line | commas >> $output_dir/${basename}_$output_progress$output_extension
@@ -1015,7 +1015,14 @@ then
 fi
 
 mkdir -p $temp
-echo -n "" > $logfile
+if [ "$logfile" != "" ]
+then
+	if [ -f "$logfile" ]
+	then
+		info > /dev/null
+	fi
+	info New run on `date` > /dev/null
+fi
 
 case "$operation" in
 	"compile")

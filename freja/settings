@@ -18,6 +18,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## uncomment this line to force freja to log its action in this file
+## and overwrite it automatically at each run
 #logfile=log
 
 table_name=table

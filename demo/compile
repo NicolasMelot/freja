@@ -30,8 +30,6 @@ case "$nb_threads" in
 	;;
 	*)
 		:
-		#echo Error: unknown nb_threads value: \"$nb_threads\" >&2
-		#exit 1
 	;;
 esac
 
