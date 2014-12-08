@@ -52,6 +52,11 @@ error()
 	log '[ERROR] '"$@"
 }
 
+warning()
+{
+	log '[WARN ] '"$@"
+}
+
 ## Load the variable file, if any, or display an error message and exits
 load_variables()
 {
@@ -512,7 +517,7 @@ compile()
 	build_args ${compile[@]}|while read args; do
 		info_start Setting $compile_counter/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 		instance_start=`date +%s`
-		bash $script_compile $args 2>&1 >/dev/null | while read line; do log $line; done
+		bash $script_compile $args 2>&1 >/dev/null | while read line; do log $line >&2; done
 		success=$?
 
 		instance_stop=`date +%s`
@@ -773,6 +778,12 @@ match()
 	done
 	local index=`eval echo $vars | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -n ^$variable$ | cut -f 1 -d :`
 
+	if [ "$index" == "" ]
+	then
+		warning Could not 'find' variable \"$variable\" >&2 when building filtering expression
+		return 1
+	fi
+
 	read line
 	if [ "`echo $line | cut -f 1 -d : --complement | cut -f $index -d ' ' | sed '/'"$expression"'/!d'`" != "" ]
 	then
@@ -902,7 +913,7 @@ parse_options()
 						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/current and try again
 						exit 1
 					else
-						mv $experiment/`basename $1` $experiment/current	
+						ln -s $experiment/`basename $1` $experiment/current	
 					fi
 				fi
 			;;
