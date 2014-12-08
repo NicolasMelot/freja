@@ -1067,7 +1067,7 @@ case "$operation" in
 			else
 				filename=$instance_name
 			fi
-			mv $experiment/$output_dir_current $experiment/$filename
+			rm $experiment/$output_dir_current
 		else
 			filename=$output_dir_current
 		fi
