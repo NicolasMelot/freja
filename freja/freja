@@ -631,8 +631,6 @@ batch()
 	local start_time=`date +%s`
 	local output_dir=$experiment/$output_dir_current
 
-	mkdir -p $output_dir
-
 	local batch_success=0
 	local compile_counter=0
 	local batch_time=0
@@ -908,12 +906,10 @@ parse_options()
 
 				if [ -d $experiment/$instance_name ]
 				then
-					if [ -d $experiment/current ]
+					if [ -d $experiment/$output_dir_current ]
 					then
-						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/current and try again
+						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/$output_dir_current and try again
 						exit 1
-					else
-						ln -s $experiment/`basename $1` $experiment/current	
 					fi
 				fi
 			;;
@@ -1056,24 +1052,40 @@ case "$operation" in
 			exit 1
 		fi
 
+		## Sets a default instance name if no name was defined
+		if [ "$instance_name" = "" ]
+		then
+			if [ -d $experiment/$output_dir_current ]
+			then
+				instance_name=`ls -l stuff/current | cut -f 2 -d '>' | cut -f 2 -d ' '`
+			else
+				instance_name=`get_date_filename`
+			fi
+		fi
+
+		## Create experiment and instance output directory, if necessary
+		if [ ! -d $experiment ] || [ ! -d $experiment/$instance_name ]
+		then
+			mkdir -p $experiment/$instance_name
+		fi
+
+		## Create symbolic link to current experiment instance
+		if [ ! -d $experiment/$output_dir_current ]
+		then
+			ln -s $instance_name $experiment/$output_dir_current
+		fi
+
 		batch
 		batch_success=$?
-		
+	
+		# Remove symbolic link upon success	
 		if [ "$batch_success" == "0" ]
 		then
-			if [ "$instance_name" = "" ]
-			then
-				filename=`get_date_filename`
-			else
-				filename=$instance_name
-			fi
 			rm $experiment/$output_dir_current
-		else
-			filename=$output_dir_current
 		fi
 
 		## Create a csv file from the experiment instance that was just run
-		merge_dir $experiment/$filename/$data$ext $experiment/$filename
+		merge_dir $experiment/$instance_name/$data$ext $experiment/$instance_name
 		## Merge all instances of this experiment into one single file
 		merge_dir $experiment/$data$ext `ls -d $experiment/*`
 		cp $experiment/$data$ext ./$output_file
