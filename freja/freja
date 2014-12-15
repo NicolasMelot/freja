@@ -906,6 +906,12 @@ parse_options()
 
 				if [ -d $experiment/$instance_name ]
 				then
+					if [ "$instance_name" == "$output_dir_current" ]
+					then
+						error You cannot use \"$instance_name\" as an experiment instance name: conflicting name with the name of a experiment being run '('value of \"output_dir_current\" 'in' ~/.freja/settings')'
+						exit 1
+					fi
+
 					if [ -d $experiment/$output_dir_current ]
 					then
 						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/$output_dir_current and try again
