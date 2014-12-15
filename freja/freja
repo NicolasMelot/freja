@@ -914,7 +914,7 @@ parse_options()
 
 					if [ -d $experiment/$output_dir_current ]
 					then
-						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/$output_dir_current and try again
+						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/$output_dir_current '('there will be no data loss')' and try again
 						exit 1
 					fi
 				fi
