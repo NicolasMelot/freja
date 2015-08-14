@@ -912,7 +912,7 @@ parse_options()
 						exit 1
 					fi
 
-					if [ -d $experiment/$output_dir_current ]
+					if [ -d $experiment/$output_dir_current ] && [ "`basename $(ls -l $experiment/$output_dir_current | cut -f 2 -d '>' | xargs echo)`" != "$instance_name" ]
 					then
 						error There is already an ongoing instance of this experiment. Finish it or delete $experiment/$output_dir_current '('there will be no data loss')' and try again
 						exit 1
