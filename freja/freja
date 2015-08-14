@@ -152,25 +152,28 @@ build_values()
 	eval next_step=`cut_head ${myvars[@]}`
 	local var=${myvars[0]}
 
-	var=`eval echo \$\{$var\[\@\]\}`
-	for val in ${var[@]}
-	do
-		## If var is not a numeric variable, then surround its value with double quotes
-		if ! is_number_seq ${var[@]}
-		then
-			val=\"$val\"
-		fi
+	if [ "$var" != "" ]
+	then
+		var=`eval echo \$\{$var\[\@\]\}`
+		for val in ${var[@]}
+		do
+			## If var is not a numeric variable, then surround its value with double quotes
+			if ! is_number_seq ${var[@]}
+			then
+				val=\"$val\"
+			fi
 
-		if [ "x$#" != "x1" ];
-		then
-			build_values ${next_step[@]}|while read line
-			do
-				echo $val $line
-			done
-		else
-			echo $val
-		fi
-	done
+			if [ "x$#" != "x1" ];
+			then
+				build_values ${next_step[@]}|while read line
+				do
+					echo $val $line
+				done
+			else
+				echo $val
+			fi
+		done
+	fi
 }
 
 build_args()
@@ -180,7 +183,12 @@ build_args()
 
 count_args()
 {
-	local arg_count=1
+	if [ "$1" == "" ]
+	then
+		local arg_count=0
+	else
+		local arg_count=1
+	fi
 	local myvars=
 	eval myvars=\(`echo $@`\)
 
@@ -475,7 +483,7 @@ merge_dir()
 
 				while read args
 				do
-					filename=$input_dir/${output_base}_$(echo $flags $args|tr ' ' _|tr -d '"')_${output_success}${output_extension}
+					filename=$input_dir/${output_base}_$(echo $flags $args|tr ' ' _|tr -d '"'|tr '/' '%')_${output_success}${output_extension}
 					if [ -f ${filename} ]
 					then
 						cat $filename | tail -n +2 | sed "s/^/`echo $flags $args|commas`,/g" >> $output_file
@@ -497,13 +505,13 @@ compile()
 {
 	local total_instances=`count_args ${compile[@]}`
 
+	info Will compile $total_instances settings
+
         ## Do not do anything if there is no instance to compile
         if [ "$total_instances" == "0" ]
         then
                 exit 0
         fi
-
-	info Will compile $total_instances settings
 
 	local compile_counter=1
 
@@ -581,6 +589,7 @@ batch()
         if [ "$compile_instances" == "0" ]
         then
                 compile_instances=1
+		compile="nothing_$$"
                 eval ${compile[0]}=1
                 dummy_compile=1
         fi
@@ -594,12 +603,6 @@ batch()
 		fi'
 	done | tee $temp/freja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
 	local total_instances="`echo $restrict_instances | wc -w`"
-
-        ## Do not do anything if there is no instance to compile or run
-        if [ "$total_instances" == "0" ]
-        then
-                exit 0
-        fi
 
 	## If there was an expression defined to rerun only a few experiments
 	if [ "$retry_expr" != "" ]
@@ -623,6 +626,12 @@ batch()
 	else
 		info Will run `echo $retry_numbers|wc -w` instances
 	fi
+
+        ## Do not do anything if there is no instance to compile or run
+        if [ "$total_instances" == "0" ]
+        then
+                exit 0
+        fi
 
 	## Initialize the instance runing counter
 	local instance_number=0
@@ -672,7 +681,7 @@ batch()
                         fi
 			local instance_start=`date +%s`
 			#local args_index=`index_seq run $args`
-			local instance_name="`echo $flags $args|tr ' ' _`"
+			local instance_name="`echo $flags $args|tr ' ' _|tr '/' '%'`"
 			local basename=${output_base}_${instance_name}
 
 			## Only run this experiment if there is no output for this one
@@ -1063,7 +1072,7 @@ case "$operation" in
 		then
 			if [ -d $experiment/$output_dir_current ]
 			then
-				instance_name=`ls -l stuff/current | cut -f 2 -d '>' | cut -f 2 -d ' '`
+				instance_name=`ls -l $experiment/current | cut -f 2 -d '>' | cut -f 2 -d ' '`
 			else
 				instance_name=`get_date_filename`
 			fi
