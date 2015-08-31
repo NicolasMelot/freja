@@ -1,3 +1,5 @@
+
+
 function hatch(obj, pattern, color, style, step, width)
 	switch pattern
 		case 'nwse'
