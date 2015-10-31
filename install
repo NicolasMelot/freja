@@ -22,10 +22,10 @@ log()
 {
 	if [ "$dryrun" == "0" ] || [ "$dryrun" == "" ]
 	then
-		echo $@
+		echo "  "$@
 		eval $@
 	else
-		echo $@
+		echo "  "$@
 	fi
 }
 
@@ -133,9 +133,8 @@ install_csh()
 
 	log "echo >> $filename"
 	log "echo $shell_comment >> $filename"
-	log "echo >> $filename"
-	log "echo 'if ($?'$shell_var') then' >> $filename"
-	log "echo '	setenv '$shell_var \"${$shell_var}:$shell_val\" >> $filename"
+	log "echo 'if (\$?'$shell_var') then' >> $filename"
+	log "echo 	setenv $shell_var \""'\${'"$shell_var"'}'":$shell_val\" >> $filename"
 	log "echo 'else' >> $filename"
 	log "echo '	setenv' "$shell_var $shell_val" >> $filename"
 	log "echo 'endif' >> $filename"
