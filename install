@@ -32,8 +32,9 @@ log()
 usage()
 {
 	echo
-	echo "	$0 "'[ --prefix ] [ --configure ]'
-	echo "		--prefix			Base directory where to install Freja. Will install executable"
+	echo "	$0 "'[ --help ] || ( [ --prefix <prefix> ] [ --configure ] [ -n | --dryrun | --not-really ] )'
+	echo "		--prefix			Defines the base installation directory"
+	echo "		<prefix>			Base directory where to install Freja. Will install executable"
 	echo "							$prefix/bin/freja and configuration files in $prefix/share/freja/"
 	echo "		--configure			Add $prefix/bin to PATH at Bash or tcsh session startup, depending on system"
 	echo "		-n | --not-really | --dryrun	Displays operations to run, but do not really perform them"
@@ -56,9 +57,15 @@ parse_options()
 				shift
 				prefix="$1"
 			;;
-			*)
+			"--help")
+				shift
 				usage
 				exit 0
+			;;
+			*)
+				echo Invalid option: \"$1\"
+				usage
+				exit 1
 			;;
 		esac
 		## Get to next argument
