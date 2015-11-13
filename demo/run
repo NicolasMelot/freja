@@ -39,5 +39,6 @@ case "$nb_threads" in
 esac
 
 ./program-$entropy-$nb_threads $count
+ssh $SCC_USER@$SCC_HOST "echo hello" >&2
 
 exit $?

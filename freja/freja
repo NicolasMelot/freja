@@ -452,6 +452,7 @@ merge_dir()
         if [ "$compile_instances" == "0" ]
         then
                 compile_instances=1
+		compile="nothing_$$"
                 eval ${compile[0]}=1
                 dummy_compile=1
         fi
@@ -693,7 +694,7 @@ batch()
 				## Output the experiment output header
 				## Reduces tabs and spaces to a single space, turn them to commas and frame them with double quotes
 				echo $output_columns | double_quotes > $output_dir/${basename}_$output_progress$output_extension
-				bash $script_run $flags $args 2> >(cat | while read stderr; do log $stderr; done >&2) | while read line;
+				bash $script_run $flags $args < /dev/null 2> >(cat | while read stderr; do log $stderr; done >&2) | while read line;
 				do
 					## Replace single quotes with double quotes, insert commas between fields
 					echo $line | commas >> $output_dir/${basename}_$output_progress$output_extension
@@ -1050,7 +1051,7 @@ fi
 case "$operation" in
 	"compile")
 		load_variables
-		if [ ! -f $script_compile ]
+		if [ ! -f "$script_compile" ]
 		then
 			error Cannot find compile script \"$script_compile\"
 			exit 1
@@ -1061,7 +1062,7 @@ case "$operation" in
 
 	"run")
 		load_variables
-		if [ ! -f $script_run ]
+		if [ ! -f "$script_run" ]
 		then
 			error Cannot find run script \"$script_run\"
 			exit 1
@@ -1079,15 +1080,15 @@ case "$operation" in
 		fi
 
 		## Create experiment and instance output directory, if necessary
-		if [ ! -d $experiment ] || [ ! -d $experiment/$instance_name ]
+		if [ ! -d "$experiment" ] || [ ! -d "$experiment/$instance_name" ]
 		then
-			mkdir -p $experiment/$instance_name
+			mkdir -p "$experiment/$instance_name"
 		fi
 
 		## Create symbolic link to current experiment instance
-		if [ ! -d $experiment/$output_dir_current ]
+		if [ ! -d "$experiment/$output_dir_current" ]
 		then
-			ln -s $instance_name $experiment/$output_dir_current
+			ln -s "$instance_name" "$experiment/$output_dir_current"
 		fi
 
 		batch
@@ -1096,14 +1097,14 @@ case "$operation" in
 		# Remove symbolic link upon success	
 		if [ "$batch_success" == "0" ]
 		then
-			rm $experiment/$output_dir_current
+			rm "$experiment/$output_dir_current"
 		fi
 
 		## Create a csv file from the experiment instance that was just run
-		merge_dir $experiment/$instance_name/$data$ext $experiment/$instance_name
+		merge_dir "$experiment/$instance_name/$data$ext" "$experiment/$instance_name"
 		## Merge all instances of this experiment into one single file
-		merge_dir $experiment/$data$ext `ls -d $experiment/*`
-		cp $experiment/$data$ext ./$output_file
+		merge_dir "$experiment/$data$ext" `ls -d "$experiment"/*`
+		cp "$experiment/$data$ext" ./$output_file
 
 		## Create an alias file
 		build_aliases > $labels_filename
@@ -1113,8 +1114,8 @@ case "$operation" in
 
 	"merge")
 		load_variables
-		merge_dir $experiment/$data$ext `ls -d $experiment/*`
-		cp $experiment/$data$ext ./$output_file
+		merge_dir "$experiment/$data$ext" `ls -d $experiment/*`
+		cp "$experiment/$data$ext" ./$output_file
 
 		exit 0
 	;;
