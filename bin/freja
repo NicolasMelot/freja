@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# Copyright 2015 Nicolas Melot
+#
+# This file is part of Freja.
+#
+# Freja is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Freja is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Freja. If not, see <http://www.gnu.org/licenses/>.
+#
+
+
 log_start()
 {
 	echo -n "$@"
@@ -163,7 +182,7 @@ build_values()
 				val=\"$val\"
 			fi
 
-			if [ "x$#" != "x1" ];
+			if [ "$#" != "1" ];
 			then
 				build_values ${next_step[@]}|while read line
 				do
@@ -217,7 +236,7 @@ build_aliases()
 	## Begin with a list of columns
 	echo "labels = list("
 
-	## Then find aliases for all variables
+	### Then find aliases for all variables
 	for i in ${compile[@]} ${run[@]} $output_columns
 	do
 		## Only output aliases if this variable has some declared
@@ -506,7 +525,29 @@ compile()
 {
 	local total_instances=`count_args ${compile[@]}`
 
-	info Will compile $total_instances settings
+	if [ "$(echo $restrict_compile)" == "" ] && [ "$(echo $restrict)" != "" ]
+	then
+		restrict_compile="$restrict"
+	fi
+
+	if [ "$(echo $restrict_compile)" != "" ]
+	then
+		info_start Processing batch list. This can take a while ...\ 
+		local restrict_expr="`echo $restrict_compile | build_expression compile`"
+		local restrict_instances="`build_args ${compile[@]} | grep -n '' | while read line
+		do
+			eval 'if' $restrict_expr '
+			then
+				echo $line
+			fi'
+		done | tee $temp/freja.$$.restricted.compile | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+		local restrict_instances="`echo $restrict_instances | wc -w`"
+		info_stop done.
+	else
+		local restrict_instances=$total_instances
+	fi
+
+	info Will compile $restrict_instances settings
 
         ## Do not do anything if there is no instance to compile
         if [ "$total_instances" == "0" ]
@@ -523,10 +564,16 @@ compile()
 	local total_time=0
 
 	local start_time=`date +%s`
-	build_args ${compile[@]}|while read args; do
-		info_start Setting $compile_counter/$total_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
+	build_args ${compile[@]} | while read args; do
+		## If this instance id not part of the combination filtered with the restricted expression, then go directly to the next without even counting it
+		if [ "`cat $temp/freja.$$.restricted.compile | cut -f 2 -d :|grep "$args"`" == "" ]
+		then
+			continue
+		fi
+
+		info_start Setting $compile_counter/$restrict_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 		instance_start=`date +%s`
-		bash $script_compile $args 2>&1 >/dev/null | while read line; do log $line >&2; done
+		bash $script_compile $args 2> >(cat | while read stderr; do log $stderr; done) 1>&2 < /dev/null
 		success=$?
 
 		instance_stop=`date +%s`
@@ -595,6 +642,7 @@ batch()
                 dummy_compile=1
         fi
 
+	info_start Processing batch list. This can take a while ...\ 
 	local restrict_expr="`echo $restrict | build_expression compile run`"
 	local restrict_instances="`build_args ${compile[@]} ${run[@]} | grep -n '' | while read line
 	do
@@ -604,10 +652,12 @@ batch()
 		fi'
 	done | tee $temp/freja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
 	local total_instances="`echo $restrict_instances | wc -w`"
+	info_stop done.
 
 	## If there was an expression defined to rerun only a few experiments
 	if [ "$retry_expr" != "" ]
 	then
+		info_start Processing retry list. This can take a while ...\ 
 		## Rebuild the filtering expression for for compile and run settings
 		retry_expr=`echo $retry_expr | build_expression compile run`
 
@@ -619,6 +669,7 @@ batch()
 				echo $line
 			fi'
 		done | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+		info_stop done.
 	fi
 
 	if [ "$retry_only" != "1" ]
@@ -694,7 +745,7 @@ batch()
 				## Output the experiment output header
 				## Reduces tabs and spaces to a single space, turn them to commas and frame them with double quotes
 				echo $output_columns | double_quotes > $output_dir/${basename}_$output_progress$output_extension
-				bash $script_run $flags $args < /dev/null 2> >(cat | while read stderr; do log $stderr; done >&2) | while read line;
+				bash $script_run $flags $args 2> >(cat | while read stderr; do log $stderr; done >&2) < /dev/null | while read line;
 				do
 					## Replace single quotes with double quotes, insert commas between fields
 					echo $line | commas >> $output_dir/${basename}_$output_progress$output_extension
@@ -808,7 +859,7 @@ parse_options()
 
 	## First catch the operation and experiment names
 	case "$operation" in
-		"compile")
+		"compile" | "sources")
 			:
 		;;
 		"run" | "merge")
@@ -994,6 +1045,42 @@ script_compile=./compile
 script_run=./run
 script_variables=./variables
 
+## Default settings values
+table_name=table
+
+temp=/tmp
+columns_list_name=table_columns
+symbol_list_name=table_symb
+ref_list_name=table_ref
+columns_file=$temp/pid.$$.columns
+failed_file=$temp/pid.$$.failed
+passed_file=$temp/pid.$$.passed
+data=$table_name
+ext=.csv
+output_dir_current=current
+output_extension=.csv
+output_success=success
+output_failure=failure
+output_progress=progress
+output_base=instance
+labels_filename=labels.r
+labels_snippet_filename=`dirname $0`/../share/freja/labels_snippet.r
+
+DATA_BEGIN="function x = $table_name()\\nx = {["
+DATA_END="] $columns_list_name() $symbol_list_name() $ref_list_name()};\\nend\\n"
+
+COLUMNS_BEGIN="function x = $columns_list_name()\\nx = {"
+COLUMNS_END="\\n};\\nend\\n"
+
+SYMB_BEGIN="function x = $symbol_list_name()\\nx = {"
+SYMB_END="\\n};\\nend\\n"
+
+REF_BEGIN="function x = $ref_list_name()\\nx = {"
+REF_END="\\n};\\nend\\n"
+
+failed_begin="==== Failed run ===="
+failed_end="--------------------"
+
 ## Load environment setting files
 if [ -f /etc/freja/settings ]
 then
@@ -1049,9 +1136,15 @@ then
 fi
 
 case "$operation" in
+	"sources")
+		if [ -f "$(dirname $(realpath $0))/../share/freja/freja.tar.gz" ]
+		then
+			ls $(dirname $(realpath $0))/../share/freja/freja.tar.gz | sort -rV | head -1 | xargs realpath
+		fi
+	;;
 	"compile")
-		load_variables
-		if [ ! -f "$script_compile" ]
+		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
+		if [ ! -f $script_compile ]
 		then
 			error Cannot find compile script \"$script_compile\"
 			exit 1
@@ -1061,8 +1154,8 @@ case "$operation" in
 	;;
 
 	"run")
-		load_variables
-		if [ ! -f "$script_run" ]
+		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
+		if [ ! -f $script_run ]
 		then
 			error Cannot find run script \"$script_run\"
 			exit 1
@@ -1113,15 +1206,15 @@ case "$operation" in
 	;;
 
 	"merge")
-		load_variables
-		merge_dir "$experiment/$data$ext" `ls -d $experiment/*`
-		cp "$experiment/$data$ext" ./$output_file
+		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
+		merge_dir $experiment/$data$ext `ls -d $experiment/*`
+		cp $experiment/$data$ext ./$output_file
 
 		exit 0
 	;;
 
 	"label")
-		load_variables
+		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
 		build_aliases > $labels_filename
 
 		exit $?
@@ -1149,7 +1242,7 @@ case "$operation" in
 	;;
 
 	"convert")
-		load_variables
+		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
 
 		convert_csv_to_m "$input_file" "$output_file"
 		## Convert a csv file to a matlab-readable cell file

@@ -97,7 +97,6 @@ Another way to control the behavior of a program among different versions are ar
 %In {C}, such preprocessor directives are {\#if + condition over a constant symbol}, {\#ifdef + constant symbol} or its complement {\#ifndef + constant symbol}, respectively the following code if the condition is achieved when compiling the code, if the constant symbol is defined when compiling or if it is undefined at compilation time. The in Fig.\ref{fig:directive}, constant symbol is {NB\_THREADS}. All these preprocessor directives can be complemented using the {\#else} directive and must be ended by {\#endif} after the code which compilation is decided by this directive.
 
 \begin{lstlisting}[caption={If the constant {NB\_THREAD} is defined to a value greater than zero when compiling this code, then a multi-threaded version of the code is compiled, using pthreads. Otherwise the sequential version is generated, that simply calls the function achieving the computation.},label={lst:directive},language=C]
-#if NB_THREADS > 0
   pthread_t thread[NB_THREADS];
   pthread_attr_t attr;
   thread_do_some_work_arg arg[NB_THREADS];
@@ -120,10 +119,8 @@ Another way to control the behavior of a program among different versions are ar
     {
       pthread_join(thread[i], NULL);
     }
-#else
   count = variate(count, entropy);
   do_some_work(count);
-#endif
 \end{lstlisting}
 
 \subsection{Step 2: Monitor the performance}
@@ -147,18 +144,14 @@ System-wise clock, that is shared between every threads. CLOCK\_MONOTONIC provid
 In order to calculate the time taken to execute a portion of code, $clock\_gettime()$ is called before and after each computation step being monitored. The difference between the two dates collected gives the execution time of the code between the first and the second collect of time. As described in section~\ref{sec:setup}, these instructions should be protected by preprocessor directives, making easy to recompile and run the program with no instrumentation instructions. Figure~\ref{lst:instrumentation} provides an example of such instrumentation and appendix~\ref{app:instrumented} provides a fully instrumented version of the {C} program.
 
 \begin{lstlisting}[caption={$clock\_gettime()$ before and after the portion of code being monitored collects the necessary data to compute the time used to run this portion of a program.},label={lst:instrumentation},language=C]
-#ifdef MEASURE
   clock_gettime(CLOCK_MONOTONIC, &start);
-#endif
 
   srandom(time(NULL));
   count = atoi(argv[1]);
   do_work(count, ENTROPY);
 
-#ifdef MEASURE
   clock_gettime(CLOCK_MONOTONIC, &stop);
 
-#if NB_THREADS > 0
   for (i = 0; i < NB_THREADS; i++)
     {
       printf("%i %i %li %i %li %i %li %i %li\n", i + 1,
@@ -167,14 +160,11 @@ In order to calculate the time taken to execute a portion of code, $clock\_getti
           thread_start[i].tv_nsec, (int) thread_stop[i].tv_sec,
           thread_stop[i].tv_nsec);
     }
-#else
   printf("%i %i %li %i %li %i %li %i %li\n", 0,
       (int)start.tv_sec, start.tv_nsec, (int)stop.tv_sec,
       stop.tv_nsec, (int)thread_start.tv_sec,
       thread_start.tv_nsec, (int)thread_stop.tv_sec,
       thread_stop.tv_nsec);
-#endif
-#endif
 R
   // Always report a successful experiment
   return 0;
@@ -194,17 +184,13 @@ thread_do_some_work(void* arg)
   thread_do_some_work_arg *args;
   args = (thread_do_some_work_arg*) arg;
 
-#ifdef MEASURE
   clock_gettime(CLOCK_MONOTONIC,\
  &thread_start[args->id]);
-#endif
 
   do_some_work(args->count);
 
-#ifdef MEASURE
   clock_gettime(CLOCK_MONOTONIC,\
  &thread_stop[args->id]);
-#endif
 
   return NULL;
 }
@@ -224,17 +210,13 @@ thread_do_some_work(void* arg)
   thread_do_some_work_arg *args;
   args = (thread_do_some_work_arg*) arg;
 
-#ifdef MEASURE
   clock_gettime(CLOCK_THREAD_CPUTIME_ID,\
  &thread_start[args->id]);
-#endif
 
   do_some_work(args->count);
 
-#ifdef MEASURE
   clock_gettime(CLOCK_THREAD_CPUTIME_ID,\
  &thread_stop[args->id]);
-#endif
 
   return NULL;
 }
@@ -248,19 +230,16 @@ thread_do_some_work(void* arg)
 \end{figure}
 
 \begin{lstlisting}[caption={C inline assembly implementation of rdtsc using hardware registers.},label={lst:rdtsc},language=C]
-#ifdef __i386
 extern __inline__ uint64_t rdtsc() {
   uint64_t x;
   __asm__ volatile ("rdtsc" : "=A" (x));
   return x;
 }
-#elif defined __amd64
 extern __inline__ uint64_t rdtsc() {
   uint64_t a, d;
   __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
   return (d<<32) | a;
 }
-#endif
 \end{lstlisting}
 
 \subsubsection{Output the data collected}
@@ -349,13 +328,10 @@ Once the files \emph{variables} and \emph{compile} are ready, the compilation pr
 All algorithm's variants are run through the bash script \emph{run} that, similarly to \emph{compile} (see section~\ref{sec:compile}) takes as arguments one possible combination of all the settings each time it is called. An example of this file is given in appendix~\ref{app:run} and illustrated in Listing.~\ref{lst:run}. The compilation settings are given first then the runtime settings are appended, both taken from \emph{variables}. In this example, arguments 1 through 2 are taken from the compilation settings and arguments 3 and 4 represent the runtime settings. The binary file whose file name has for suffix the matching entropy value and number of threads is executed with the runtime argument ct, that defines the number of jumps the program has to perform. The parameter \emph{try} is never used and stands only to run several times (defined in \emph{variables} as 1 to 3) the same variant.
 
 \begin{lstlisting}[caption={\emph{run} catches the compilation settings first, then the run settings and run the right binary with relevant parameters.},label={lst:run},language=bash]
-#!/bin/bash -f
 
-# compilation settings
 entropy=$1
 nb_threads=$2
 
-# run settings
 ct=$3
 try=$4
 
@@ -381,28 +357,22 @@ This section uses R to analyze the data produced in steps 1 through 5, relying o
 
 First, Listing~\ref{lst:r_intro} shows a typical header for a R script to use with Freja. The script loads the packages ggplot2 and plyr, that are used for plotting and analyzing data, respectively. The data set is read from the csv-formatted input file \emph{table.csv'} produced by Freja. Finally, it loads a r script \emph{labels.r}, also generated by Freja, that reflects the human-readable labels defined in Step 3 (Sec.~\ref{sec:plan}).
 \begin{lstlisting}[caption={Introductory section of a R script to plot data produced by Freja.},label={lst:r_intro},language=r]
-## Load packages
 library(ggplot2)
 library(plyr)
 
-## Read the data set
 data.frame = read.csv("table.csv")
 
-## Load labels and labeling functions
 source("labels.r")
 \end{lstlisting}
 
 Listing~\ref{lst:r_process} shows how R can be used to define a function to convert nanoseconds returned by calls of \emph{clock\_gettime()}, and how this function is used to compute mean and standard deviation of global and per-thread execution time. Mean and standard deviations are computed with regards to the number of threads (\emph{nb\_threads}), the thread number (\emph{thread}) and the problem size (\emph{count}). Basically, global and per-thread execution time are averaged over all running repetitions defined by the setting \emph{try}.
 
 \begin{lstlisting}[caption={R code to convert the time format returned by calls to clock\_gettime() into single numeric values in seconds, and computation of average and standard deviations of global and per-thread execution time.},label={lst:r_process},language=r]
-## Define a function to convert nanoseconds to seconds
 nsec2sec = function(nsec)
 {
   return(nsec / 1000000000)
 }
 
-## Compute the execution time for each run of the
-## experiment
 data.frame = ddply(
   data.frame, c("nb_threads", "thread", "count",
   	"try"), summarize, thread_time = 
@@ -413,7 +383,6 @@ data.frame = ddply(
     start_time_sec - nsec2sec(start_time_nsec)
 )
 
-## Compute mean and standard deviation
 data.frame = ddply(
   data.frame, c("nb_threads", "thread", "count"),
   summarize, thread_mean_time = mean(thread_time),
@@ -426,7 +395,6 @@ data.frame = ddply(
 The last phase of the R script uses ggplot2 and the data generated and processed in the previous steps and phases to generate meaningful scripts. You can browse the internet for example and documentation about ggplot2. Here, Freja provides through \emph{labels.r} a convenient way to translate every values and column names to labels as defined in Step 3 (Sec.~\ref{sec:plan}). Notice that ggplot is not provided directly with the data frame processed in earlier phases, but through the function \emph{apply\_labels()}, that translates every values in the data frame with their labels. Similarly, columns's names used as axis labels (here \emph{nb\_threads}) are translated using the function \emph{label()}. It is a good practice apply labels only after all data has been processed, when plotting, as doing so at any earlier phase modifies the frame's key values and invalidates conditions that may apply when processing the data.
 
 \begin{lstlisting}[caption={Use of ggplots to produce a simple dotted curve showing the execution time as a function of number of threads, for problem sizes ranging from $10^8$ to $20^8$ jumps.},label={lst:r_plot},language=r]
-## Create a simple plot with ggplots
 plot = ggplot() +
   geom_line(data = apply_labels(data.frame),
             aes(nb_threads, global_mean_time,
@@ -446,7 +414,6 @@ plot = ggplot() +
   scale_colour_manual(
   	values = c("#771C19", "#B6C5CC")
   	)
-## Save the plot as a svg file
 ggsave(file="1_timing.svg", plot=plot, width=8, height=6)
 \end{lstlisting}
 
