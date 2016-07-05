@@ -465,6 +465,7 @@ merge_dir()
 	shift
 
 	local compile_instances=`count_args ${compile[@]}`
+	local total_instances=`count_args ${compile[@]} ${run[@]}`
         local dummy_compile=0
 
         ## If there is no compilation setting, just let the running settings go once
@@ -476,7 +477,11 @@ merge_dir()
                 dummy_compile=1
         fi
 
-	info Merging all results to $output_file
+	local restrict_cexpr="`echo $restrict | build_expression compile`"
+	local restrict_expr="`echo $restrict | build_expression compile run`"
+
+	local sp='/-\|'
+	info_start Merging all results to $output_file ...
 
 	## Take all column name and double quote them
 	if [ "$dummy_compile" == "0" ]
@@ -496,6 +501,12 @@ merge_dir()
 			local counter=1
 			while read flags
 			do
+				## If this instance id not part of the combination filtered with the restricted expression, then go directly to the next without even counting it
+				#eval line=\"$flags\"
+				#eval 'if ! ( ' $restrict_cexpr ' )
+				#then
+				#	continue
+				#fi'
 				if [ "$dummy_compile" != "0" ]
 				then
 					flags=""
@@ -503,13 +514,36 @@ merge_dir()
 
 				while read args
 				do
+					eval line=\"$flags $args\"
+					eval 'if ! ( ' $restrict_expr ' )
+					then
+						counter=$(($counter + 1))
+						echo -en '\r'
+						echo -n "[INFO]" Merging all results to $output_file ... $(( $counter * 100 / $total_instances ))%\ 
+						printf '"'"' \b%.1s'"'"' "$sp"
+						sp=${sp#?}${sp%???}
+						continue
+					fi'
+					#if [ "`cat $temp/freja.$$.restricted|cut -f 2 -d :|grep "^$flags $args$"`" == "" ]
+					#then
+					#	continue
+					#fi
+
 					filename=$input_dir/${output_base}_$(echo $flags $args|tr ' ' _|tr -d '"'|tr '/' '%')_${output_success}${output_extension}
 					if [ -f ${filename} ]
 					then
 						cat $filename | tail -n +2 | sed "s/^/`echo $flags $args|commas`,/g" >> $output_file
 					fi
+					counter=$(($counter + 1))
+					echo -en '\r'
+					echo -n '[INFO]' Merging all results to $output_file ... $(( $counter * 100 / $total_instances ))%\ 
+					printf ' \b%.1s' "$sp"
+					sp=${sp#?}${sp%???}
 				done < <(build_values ${run[@]})
 			done < <(build_values ${compile[@]})
+			
+			echo -en '\r'
+			echo '[INFO]' Merging all results to $output_file ... done.' '
 		fi
 	
 		shift
@@ -532,17 +566,22 @@ compile()
 
 	if [ "$(echo $restrict_compile)" != "" ]
 	then
-		info_start Processing batch list. This can take a while ...\ 
 		local restrict_expr="`echo $restrict_compile | build_expression compile`"
-		local restrict_instances="`build_args ${compile[@]} | grep -n '' | while read line
-		do
-			eval 'if' $restrict_expr '
-			then
-				echo $line
-			fi'
-		done | tee $temp/freja.$$.restricted.compile | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
-		local restrict_instances="`echo $restrict_instances | wc -w`"
-		info_stop done.
+		if [ "$count_selected_only" != "0" ]
+		then
+			info_start Processing batch list. This can take a while ...\ 
+			local restrict_instances="`build_args ${compile[@]} | grep -n '' | while read line
+			do
+				eval 'if' $restrict_expr '
+				then
+					echo $line
+				fi'
+			done | tee $temp/freja.$$.restricted.compile | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+			local restrict_instances="`echo $restrict_instances | wc -w`"
+			info_stop done.
+		else
+			local restrict_instances=$total_instances
+		fi
 	else
 		local restrict_instances=$total_instances
 	fi
@@ -563,20 +602,30 @@ compile()
 	# Timing
 	local total_time=0
 
-	local start_time=`date +%s`
+	local start_time=`date '+%s.%N'`
 	build_args ${compile[@]} | while read args; do
 		## If this instance id not part of the combination filtered with the restricted expression, then go directly to the next without even counting it
-		if [ "`cat $temp/freja.$$.restricted.compile | cut -f 2 -d :|grep "^$args$"`" == "" ]
+		if [ "$count_selected_only" != "0" ] && [ "`cat $temp/freja.$$.restricted.compile | cut -f 2 -d :|grep "^$args$"`" == "" ]
 		then
 			continue
+		else
+			eval line=\"$args\"
+			if [ "$count_selected_only" == "0" ]
+			then
+				eval 'if ! ( ' $restrict_expr ' )
+				then
+					compile_counter=$(($compile_counter + 1))
+					continue
+				fi'				
+			fi
 		fi
 
 		info_start Setting $compile_counter/$restrict_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
-		instance_start=`date +%s`
+		instance_start=`date '+%s.%N'`
 		bash $script_compile $args 2> >(cat | while read stderr; do log $stderr; done) 1>&2 < /dev/null
 		success=$?
 
-		instance_stop=`date +%s`
+		instance_stop=`date '+%s.%N'`
 
 		if [ "x$success" == "x0" ]; then
 			outcome="OK"
@@ -585,10 +634,10 @@ compile()
 			compile_success=1
 		fi
 
-		compile_time=$(($instance_stop - $instance_start))
+		compile_time=$(echo $instance_stop - $instance_start | bc -l)
 		total_time=$(perl -e "printf(\"%.2f\", $(echo "($total_time + $compile_time)"))")
 		remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $compile_counter) * ($total_time / $compile_counter))"))")
-		info_stop $outcome. $compile_time sec finished on $(echo -n `get_date`)\; approx. $remaining sec left \($(perl -e "printf(\"%.2f\", $(echo "($remaining / 60)"))") minutes\)
+		info_stop $outcome. $(printf "%.2f" $compile_time) sec finished on $(echo -n `get_date`)\; approx. $(printf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(printf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
 
 		if [ "x$compile_counter" == "x$restrict_instances" ]; then
 			exit $compile_success
@@ -604,10 +653,10 @@ compile()
 		local compile_outcome="Failed"
 	fi
 	
-	local stop_time=`date +%s`
-	local overall_time=$(($stop_time - start_time))
+	local stop_time=`date '+%s.%N'`
+	local overall_time=$(echo $stop_time - $start_time | bc -l)
 
-	info $compile_outcome. Compilation took $overall_time seconds \($(($overall_time / 60)) minutes\) or $(($overall_time / $total_instances)) seconds per compilation setting \($(($overall_time / $total_instances / 60)) minutes\).
+	info $compile_outcome. Compilation took $(printf "%.2f" $overall_time) seconds \($(printf "%.2f" $(echo $overall_time / 60 | bc -l)) minutes\) or $(printf "%.2f" $(echo $overall_time / $total_instances | bc -l)) seconds per compilation setting \($(printf "%.2f" $(echo $overall_time / $total_instances / 60 | bc -l)) minutes\).
 
 	return $compile_success
 }
@@ -642,41 +691,49 @@ batch()
                 dummy_compile=1
         fi
 
-	info_start Processing batch list. This can take a while ...\ 
 	local restrict_expr="`echo $restrict | build_expression compile run`"
-	local restrict_instances="`build_args ${compile[@]} ${run[@]} | grep -n '' | while read line
-	do
-		eval 'if' $restrict_expr '
-		then
-			echo $line
-		fi'
-	done | tee $temp/freja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
-	local total_instances="`echo $restrict_instances | wc -w`"
-	info_stop done.
+	if [ "$count_selected_only" != "0" ]
+	then
+		info_start Processing batch list. This can take a while ...\ 
+		local restrict_instances="`build_args ${compile[@]} ${run[@]} | grep -n '' | while read line
+		do
+			eval 'if' $restrict_expr '
+			then
+				echo $line
+			fi'
+		done | tee $temp/freja.$$.restricted | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+		info_stop done.
+		local total_instances="`echo $restrict_instances | wc -w`"
+	else
+		local total_instances=`count_args ${compile[@]} ${run[@]}`
+	fi
 
 	## If there was an expression defined to rerun only a few experiments
+	retry_expr=`echo $retry_expr | build_expression compile run`
 	if [ "$retry_expr" != "" ]
 	then
 		info_start Processing retry list. This can take a while ...\ 
 		## Rebuild the filtering expression for for compile and run settings
-		retry_expr=`echo $retry_expr | build_expression compile run`
 
-		## Make up the complete list of settings to run and filter them using the expression
-		retry_numbers="`build_args ${compile[@]} ${run[@]} | grep -n ''| while read line
-		do
-			eval 'if' $retry_expr ' 
-			then
-				echo $line
-			fi'
-		done | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
-		info_stop done.
+		if [ "$count_selected_only" != "0" ]
+		then
+			## Make up the complete list of settings to run and filter them using the expression
+			retry_numbers="`build_args ${compile[@]} ${run[@]} | grep -n ''| while read line
+			do
+				eval 'if' $retry_expr ' 
+				then
+					echo $line
+				fi'
+			done | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
+			info_stop done.
+		fi
 	fi
 
-	if [ "$retry_only" != "1" ]
+	if [ "$retry_only" != "1" ] || [ "count_selected_only" == "0" ]
 	then
 		info Will run $total_instances instances
 	else
-		info Will run `echo $retry_numbers|wc -w` instances
+		info Will run `echo $retry_numbers | wc -w` instances
 	fi
 
         ## Do not do anything if there is no instance to compile or run
@@ -689,7 +746,7 @@ batch()
 	local instance_number=0
 	
 	# Initialize output file
-	local start_time=`date +%s`
+	local start_time=`date '+%s.%N'`
 	local output_dir=$experiment/$output_dir_current
 
 	local batch_success=0
@@ -710,7 +767,7 @@ batch()
 		while read args
 		do
 			## If this instance id not part of the combination filtered with the restricted expression, then go directly to the next without even counting it
-			if [ "`cat $temp/freja.$$.restricted|cut -f 2 -d :|grep "^$flags $args$"`" == "" ]
+			if [ "$count_selected_only" != "0" ] && [ "`cat $temp/freja.$$.restricted|cut -f 2 -d :|grep "^$flags $args$"`" == "" ]
 			then
 				filtered_counter=$(( $filtered_counter + 1 ))
 				continue
@@ -718,12 +775,23 @@ batch()
 
 			## If the test above was passed, then count this instance
 			local instance_number=$(($instance_number + 1))
+
+			if [ "$count_selected_only" == "0" ]
+			then
+				eval line=\"$flags $args\"
+				eval 'if ! ( ' $restrict_expr ' )
+				then
+					continue
+				fi'				
+			fi
 	
 			## If this instance has been cut through the retry option, then skip it (while still counting it)
 			if [ "$retry_only" != "" ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$(($instance_number + $filtered_counter))$`" == "" ]
 			then
 				run_counter=$(($run_counter + 1))
 				continue
+			else
+				:
 			fi
 			if [ "$dummy_compile" == "0" ]
                         then
@@ -731,13 +799,15 @@ batch()
                         else
 				info_start Instance $instance_number/$total_instances: `for i in $(seq 0 $((${#run[@]} - 1)));do echo "${run[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
                         fi
-			local instance_start=`date +%s`
+			local instance_start=`date '+%s.%N'`
 			#local args_index=`index_seq run $args`
 			local instance_name="`echo $flags $args|tr ' ' _|tr '/' '%'`"
 			local basename=${output_base}_${instance_name}
 
 			## Only run this experiment if there is no output for this one
-			if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$(($instance_number + filtered_counter))$`" == "" ]
+			#if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$(($instance_number + filtered_counter))$`" == "" ]
+			eval line=\"$flags $args\"
+			eval 'if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "$retry_expr" != "" ] && ! (' $retry_expr ' )
 			then
 				local outcome="Skipped"
 				local skipped=$(($skipped + 1))
@@ -771,12 +841,12 @@ batch()
 
 					run_success=1
 				fi
-			fi
+			fi'
 
-			local instance_stop=`date +%s`
+			local instance_stop=`date '+%s.%N'`
 
 			## Evaluate how much time is left before completion based on average time to run previous experiments, not taking into account the ones skipped
-			local run_time=$(($instance_stop - $instance_start))
+			local run_time=`echo $instance_stop - $instance_start | bc -l`
 			total_run=$(($instance_number - $skipped))
 			if [ "$total_run" == "0" ]
 			then
@@ -784,7 +854,7 @@ batch()
 			fi
 			local batch_time=$(perl -e "printf(\"%.2f\", $(echo "($batch_time + $run_time)"))")
 			local remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $instance_number) * ($batch_time / $total_run))"))")
-			info_stop $outcome. $run_time sec finished on $(echo -n `get_date`)\; approx. $remaining sec left \($(perl -e "printf(\"%.2f\", $(echo "($remaining / 60)"))") minutes\)
+			info_stop $outcome. $(printf "%.2f" $run_time) sec finished on $(echo -n `get_date`)\; approx. $(printf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(printf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
 
 			run_counter=$(($run_counter + 1))
 		done < <(build_args ${run[@]})
@@ -811,10 +881,10 @@ batch()
 		eval ${compile[0]}=
 	fi
 
-	local stop_time=`date +%s`
-	local overall_time=$(($stop_time - start_time))
+	local stop_time=`date '+%s.%N'`
+	local overall_time=$(echo $stop_time - start_time | bc -l)
 
-	info $batch_outcome. Batch took $overall_time seconds \($(($overall_time / 60)) minutes\) to run, or $(($overall_time / $total_instances)) seconds per instance run \($(($overall_time / $total_instances / 60)) minutes\).
+	info $batch_outcome. Batch took $(printf "%.2f" $overall_time) seconds \($(printf "%.2f" $(echo $overall_time / 60 | bc -l)) minutes\) to run, or $(printf "%.2f" $(echo $overall_time / $total_instances | bc -l)) seconds per instance run \($(printf "%.2f" $(echo $overall_time / $total_instances / 60 | bc -l)) minutes\).
 
 	return $batch_success
 }
@@ -1010,6 +1080,9 @@ parse_options()
 				shift
 				logfile="$1"
 			;;
+			"--count-selected-runs-only")
+				count_selected_only=1
+			;;
 			"--")
 				return 0
 			;;
@@ -1065,6 +1138,7 @@ output_progress=progress
 output_base=instance
 labels_filename=labels.r
 labels_snippet_filename=`dirname $0`/../share/freja/labels_snippet.r
+count_selected_only=0
 
 DATA_BEGIN="function x = $table_name()\\nx = {["
 DATA_END="] $columns_list_name() $symbol_list_name() $ref_list_name()};\\nend\\n"
