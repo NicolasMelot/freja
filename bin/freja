@@ -518,7 +518,7 @@ merge_dir()
 					eval 'if ! ( ' $restrict_expr ' )
 					then
 						counter=$(($counter + 1))
-						echo -en '\r'
+						echo -en '"'"'\r'"'"'
 						echo -n "[INFO]" Merging all results to $output_file ... $(( $counter * 100 / $total_instances ))%\ 
 						printf '"'"' \b%.1s'"'"' "$sp"
 						sp=${sp#?}${sp%???}
@@ -635,7 +635,8 @@ compile()
 		fi
 
 		compile_time=$(echo $instance_stop - $instance_start | bc -l)
-		total_time=$(perl -e "printf(\"%.2f\", $(echo "($total_time + $compile_time)"))")
+		#total_time=$(perl -e "printf(\"%.2f\", $(echo "($total_time + $compile_time)"))")
+		total_time=$(echo $instance_stop - $start_time | bc -l)
 		remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $compile_counter) * ($total_time / $compile_counter))"))")
 		info_stop $outcome. $(printf "%.2f" $compile_time) sec finished on $(echo -n `get_date`)\; approx. $(printf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(printf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
 
@@ -852,7 +853,8 @@ batch()
 			then
 				total_run=1
 			fi
-			local batch_time=$(perl -e "printf(\"%.2f\", $(echo "($batch_time + $run_time)"))")
+			#local batch_time=$(perl -e "printf(\"%.2f\", $(echo "($batch_time + $run_time)"))")
+			local batch_time=`echo $instance_stop - $start_time | bc -l`
 			local remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $instance_number) * ($batch_time / $total_run))"))")
 			info_stop $outcome. $(printf "%.2f" $run_time) sec finished on $(echo -n `get_date`)\; approx. $(printf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(printf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
 
@@ -882,7 +884,7 @@ batch()
 	fi
 
 	local stop_time=`date '+%s.%N'`
-	local overall_time=$(echo $stop_time - start_time | bc -l)
+	local overall_time=$(echo $stop_time - $start_time | bc -l)
 
 	info $batch_outcome. Batch took $(printf "%.2f" $overall_time) seconds \($(printf "%.2f" $(echo $overall_time / 60 | bc -l)) minutes\) to run, or $(printf "%.2f" $(echo $overall_time / $total_instances | bc -l)) seconds per instance run \($(printf "%.2f" $(echo $overall_time / $total_instances / 60 | bc -l)) minutes\).
 
