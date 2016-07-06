@@ -926,6 +926,38 @@ match()
 	fi
 }
 
+compile-test()
+{
+	shift
+	if [ "$#" != "`echo ${compile[@]} | wc -w`" ]
+	then
+		echo Incorrect number of settings. Please give the value of each compilation parameter as arguments in the form key=value. >&2
+		echo ex. freja compile-test hello=world foo=bar >&2
+		echo >&2
+		echo Values required: ${compile[@]} >&2
+		echo Value defined: $@ >&2
+		echo >&2
+		exit 1
+	fi
+	bash $script_compile $(:(){ paste $@; };: <(echo ${compile[@]} | tr ' ' \\\n | grep -n "" | sort -t : -k2) <(echo $@ | tr ' ' \\\n | sort -t = -k1) | sort -t: -k1 -V | cut -f 2 -d = | xargs echo)
+}
+
+run-test()
+{
+	shift
+	if [ "$#" != "`echo ${compile[@]} ${run[@]} | wc -w`" ]
+	then
+		echo Incorrect number of settings. Please give the value of each compilation and run parameter as arguments in the form key=value. >&2
+		echo ex. freja run-test hello=world foo=bar >&2
+		echo >&2
+		echo Values required: ${compile[@]} ${run[@]}>&2
+		echo Value defined: $@ >&2
+		echo >&2
+		exit 1
+	fi
+	bash $script_run $(:(){ paste $@; };: <(echo ${compile[@]} ${run[@]} | tr ' ' \\\n | grep -n "" | sort -t : -k2) <(echo $@ | tr ' ' \\\n | sort -t = -k1) | sort -t: -k1 -V | cut -f 2 -d = | xargs echo)
+}
+
 parse_options()
 {
 	operation=$1
@@ -935,6 +967,9 @@ parse_options()
 	case "$operation" in
 		"compile" | "sources")
 			:
+		;;
+		"compile-test" | "run-test")
+			return 0
 		;;
 		"run" | "merge")
 			experiment="$1"
@@ -1230,7 +1265,24 @@ case "$operation" in
 		compile
 		exit $?
 	;;
-
+	"compile-test")
+		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
+		if [ ! -f $script_compile ]
+		then
+			exit 1
+		fi
+		eval compile-test `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
+		exit $?
+	;;
+	"run-test")
+		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
+		if [ ! -f $script_compile ]
+		then
+			exit 1
+		fi
+		eval run-test `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
+		exit $?
+	;;
 	"run")
 		eval load_variables `for i in "$@"; do printf "\"%s\" " "$(echo $i|sed 's/"/\\\"/g')"; done; echo`
 		if [ ! -f $script_run ]
