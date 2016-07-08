@@ -45,6 +45,12 @@ log()
 	log_stop ""
 }
 
+silentlog()
+{
+	log_start "$@" > /dev/null 2>&1
+	log_stop "" > /dev/null 2>&1
+}
+
 run()
 {
 	$@
@@ -622,7 +628,7 @@ compile()
 
 		info_start Setting $compile_counter/$restrict_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 		instance_start=`date '+%s.%N'`
-		bash $script_compile $args 2> >(cat | while read stderr; do log $stderr; done) 1>&2 < /dev/null
+		bash $script_compile $args 2> >(cat | while read stderr; do silentlog $stderr; done) 1>&2 < /dev/null
 		success=$?
 
 		instance_stop=`date '+%s.%N'`
@@ -818,7 +824,7 @@ batch()
 				## Output the experiment output header
 				## Reduces tabs and spaces to a single space, turn them to commas and frame them with double quotes
 				echo $output_columns | double_quotes > $output_dir/${basename}_$output_progress$output_extension
-				bash $script_run $flags $args 2> >(cat | while read stderr; do log $stderr; done >&2) < /dev/null | while read line;
+				bash $script_run $flags $args 2> >(cat | while read stderr; do silentlog $stderr; done >&2) < /dev/null | while read line;
 				do
 					## Replace single quotes with double quotes, insert commas between fields
 					echo $line | commas >> $output_dir/${basename}_$output_progress$output_extension
