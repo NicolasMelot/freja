@@ -734,8 +734,6 @@ batch()
 			done | cut -f 1 -d :|tr \\\n ' '|xargs echo`"
 			info_stop done.
 		fi
-	#else
-		#retry_expr=#/bin/true
 	fi
 
 	if [ "$retry_only" != "1" ] || [ "count_selected_only" == "0" ]
@@ -824,7 +822,7 @@ batch()
 				retry_expr_dummy="$retry_expr"
 			fi
 
-			eval 'if ( [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "$retry_numbers" == "" ] && [ "$retry_expr" == "" ] ) || ( [ "$retry_numbers" != "" ] && [ "`echo $retry_numbers|tr \\\t " "|tr -s " "|xargs echo|tr " " \\\n|grep ^$(($instance_number + filtered_counter))$`" == "" ] ) || ( [ "$retry_expr" != "" ] && ! ( $retry_expr_dummy ) )
+			eval 'if ( [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "$retry_numbers" == "" ] && [ "$retry_expr" == "" ] ) || ( [ "$retry_numbers" != "" ] && [ "`echo $retry_numbers|tr \\\t " "|tr -s " "|xargs echo|tr " " \\\n|grep ^$(($instance_number + filtered_counter))$`" == "" ] ) || ( [ "$retry_expr" != "" ] && ! ( '$retry_expr_dummy' ) )
 			then
 				local outcome="Skipped"
 				local skipped=$(($skipped + 1))
