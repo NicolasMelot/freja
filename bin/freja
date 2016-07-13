@@ -816,7 +816,7 @@ batch()
 			## Only run this experiment if there is no output for this one
 			#if [ -f $output_dir/${basename}_$output_success$output_extension ] && [ "`echo $retry_numbers|tr \\\t ' '|tr -s ' '|xargs echo|tr ' ' \\\n|grep ^$(($instance_number + filtered_counter))$`" == "" ]
 			eval line=\"$flags $args\"
-			eval 'if [ -f $output_dir/${basename}_$output_success$output_extension ] && ! (' $retry_expr ' )
+			eval 'if [ -f $output_dir/${basename}_$output_success$output_extension ] || ! (' $retry_expr ' )
 			then
 				local outcome="Skipped"
 				local skipped=$(($skipped + 1))
