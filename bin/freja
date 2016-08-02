@@ -239,11 +239,31 @@ build_aliases()
 	## Take as a base the labelling functions snippet
 	cat $labels_snippet_filename
 
+	## Synthetize labels for column combinations. Process described in more details in the next loop block
+	echo -en "combination = list(\n\t"
+	for i in $combination
+	do
+		if [ "`eval echo '$'comb_$i`" != "" ]
+		then
+			## Output the column name ready to receive the vector
+			echo -en "$i = c("
+
+			## Iterate through all pairs (key,label)
+			for j in $(eval echo '$'comb_$i)
+			do
+				echo -n '\"'$j'\"',\ 
+			done | rev | cut -f 1 -d ',' --complement | rev | xargs echo -n
+
+			echo -n "), "
+		fi 
+	done | rev | cut -f 1 -d ',' --complement | rev
+	echo ")"
+	echo
+
 	## Begin with a list of columns
 	echo "labels = list("
-
 	### Then find aliases for all variables
-	for i in ${compile[@]} ${run[@]} $output_columns
+	for i in ${compile[@]} ${run[@]} $output_columns $combination
 	do
 		## Only output aliases if this variable has some declared
 		if [ "`eval echo '$'labels_$i`" != "" ]
@@ -292,6 +312,30 @@ build_aliases()
 	fi
 	## Close the list
 	echo ")"
+	echo
+
+	## Add color settings
+	echo -en "colors = list(\n\t"
+	for i in ${compile[@]} ${run[@]} $output_columns $combination
+	do
+		if [ "`eval echo '$'colors_$i`" != "" ]
+		then
+			## Output the column name ready to receive the vector
+			echo -en "$i = c("
+
+			## Iterate through all pairs (key,label)
+			eval echo '$'colors_$i | tr ";" \\\n | xargs -L 1 echo | grep -v ^$ | while read j
+			do
+				instance="`echo $j | cut -f 1 -d : | xargs echo`"
+				color="`echo $j | cut -f 1 -d : --complement | xargs echo`"
+				echo -n \\\"$instance\\\" = \\\"$color\\\"', '
+			done | rev | cut -f 1 -d ',' --complement | rev | xargs echo -n
+
+			echo -n "), "
+		fi
+	done | rev | cut -f 1 -d ',' --complement | rev
+	echo ")"
+	echo
 }
 
 convert_csv_to_m()
