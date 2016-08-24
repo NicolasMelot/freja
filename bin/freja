@@ -724,7 +724,7 @@ build_expression()
 	## Example on how to match balanced and nested parenthesis: 
 	## http://stackoverflow.com/questions/14952113/how-can-i-matches-the-nested-brackets-by-regex
 	#perl -i -pe 's/match\(([^,]*),(?:(\(([^()]|(?2))*\))|([^()]*))\)/echo \$line | match "$1" "$2$4"'"$sources"'/g'
-	perl -pe 's/match\(([^,]*)\s*,\s*"([^"]*)"\)/echo \$line | match "$1" "$2"'"$sources"'/g'
+	perl -pe 's/match\(([^,]*)\s*,\s*"([^"]*)"\)/echo \$line | match "$1" "$2"'"$sources"' $dummy_compile/g'
 }
 
 batch()
@@ -953,7 +953,8 @@ match()
 {
 	local variable="$1"
 	local expression="$2"
-	shift 2
+	local dummy_compile="$3"
+	shift 3
 
 	if [ "$expression" == "" ]
 	then
@@ -966,6 +967,10 @@ match()
 		shift
 	done
 	local index=`eval echo $vars | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -n ^$variable$ | cut -f 1 -d :`
+	if [ "$dummy_compile" == "1" ]
+	then
+		index=$(($index - 1))
+	fi
 
 	if [ "$index" == "" ]
 	then
