@@ -515,7 +515,6 @@ merge_dir()
 	shift
 
 	local compile_instances=`count_args ${compile[@]}`
-	local total_instances=`count_args ${compile[@]} ${run[@]}`
         local dummy_compile=0
 
         ## If there is no compilation setting, just let the running settings go once
@@ -529,6 +528,12 @@ merge_dir()
 
 	local restrict_cexpr="`echo $restrict | build_expression compile`"
 	local restrict_expr="`echo $restrict | build_expression compile run`"
+	if [ "$count_selected_only" != "0" ]
+	then
+		local total_instances="`echo $restrict_expr | wc -w`"
+	else
+		local total_instances=`count_args ${compile[@]} ${run[@]}`
+	fi
 
 	local sp='/-\|'
 	info_start Merging all results to $output_file ...
@@ -593,7 +598,7 @@ merge_dir()
 			done < <(build_values ${compile[@]})
 			
 			echo -en '\r'
-			echo '[INFO]' Merging all results to $output_file ... done.' '
+			echo '[INFO]' Merging all results to $output_file ... done.'       '
 		fi
 	
 		shift
