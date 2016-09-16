@@ -86,71 +86,29 @@ label = function(col, columns="columns", labels.list = labels)
 
 freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0000", "#66BB00", "#0000BB"), comb = combination)
 {
-  #data.frame = apply_labels(data.frame, labels.list, comb = comb)
-  #print(apply_labels(data.frame, labels.list = colors.list)[,col])
-  ## Substitute levels by their color, if any
-  data.frame = apply_labels(data.frame, labels.list = colors.list, comb = comb)
-  out = levels(data.frame[,col])
+  out = levels(interaction(data.frame[,col], sep = "."))
+  col = paste(col, collapse = sep)
 
-#print(length(out))
-#print(length(colors[[col]]))
   def = colorRampPalette(default)(abs(length(out) - length(colors[[col]])))
   missing = 1
-#print(def)
 
   lst = list()
   for(i in out)
   {
-    if(i %in% colors[[col]])
+    if(i %in% names(colors.list[[col]]))
     {
-      lst = c(lst, i)
+      lst = c(lst, colors.list[[col]][[i]])
     }
     else
     {
+      warning(paste(c("Could not find color for value ", as.character(i), "."), collapse = ""));
       out[[i]] = def[i]
       lst = c(lst, def[missing])
       missing = missing + 1
     }
   }
 
-#print(as.character(lst))
+  lst = c(as.character(lst), "#000000")
   return(as.character(lst))
-  ## Only apply the transformation if the column exists, otherwise skip the column
-  if(col %in% names(data.frame))
-  {
-    ## If the corresponding column in the data frame is not a factor, then make it one
-    if(!is.factor(data.frame[,col]))
-    {
-      data.frame[,col] <- as.factor(data.frame[,col])
-    }
-    
-    ## Get levels and respective labels as from the label list
-    levels = levels(data.frame[,col])
-    colors = colors.list[[col]]
-
-    ## Prepare a vector for missing colors and a counter
-    def = colorRampPalette(default)(abs(length(levels) - length(colors)))
-    missing = 1
-    
-    ## Pad missing colors with default color
-    out = list()
-    for(i in levels)
-    {
-      if(i %in% names(colors))
-      {
-        out = c(out, colors[[i]])
-      }
-      else
-      {
-        out = c(out, def[missing])
-        missing = missing + 1
-      }
-    }
-    return(as.character(out))
-  }
-  else
-  {
-    return(colorRampPalette(default)(length(data.table[,col])))
-  }  
 }
 
