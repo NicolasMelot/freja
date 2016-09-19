@@ -84,7 +84,7 @@ label = function(col, columns="columns", labels.list = labels)
     return(col)
 }
 
-freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0000", "#66BB00", "#0000BB"), comb = combination)
+freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0000", "#66BB00", "#0000BB"), comb = combination, sep = "_")
 {
   out = levels(interaction(data.frame[,col], sep = "."))
   col = paste(col, collapse = sep)
@@ -108,7 +108,6 @@ freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0
     }
   }
 
-  lst = c(as.character(lst), "#000000")
   return(as.character(lst))
 }
 
