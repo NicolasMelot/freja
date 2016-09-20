@@ -166,7 +166,7 @@ get_date()
 
 get_date_filename()
 {
-	date|tr ' ' _|tr : -
+	date | tr ' ' _ | tr : -
 }
 
 build_values()
@@ -231,7 +231,7 @@ double_quotes()
 
 commas()
 {
-	sed 's/"/"\\\\\"/g'|while read i; do :(){ for i in "$@"; do echo -n $i,; done|sed 's/,$/\n/g'; }; eval : $i; done
+	sed 's/"/"\\\\\"/g' | while read i; do :(){ for i in "$@"; do echo -n $i,; done | sed 's/,$/\n/g'; }; eval : $i; done
 }
 
 build_aliases()
@@ -719,6 +719,7 @@ compile()
 
 build_expression()
 {
+	#echo '['$0:$LINENO']' \$@ = \"$@\" >&2
 	while [[ $# > 0 ]]
 	do
 		sources="$sources $1"
@@ -729,7 +730,12 @@ build_expression()
 	## Example on how to match balanced and nested parenthesis: 
 	## http://stackoverflow.com/questions/14952113/how-can-i-matches-the-nested-brackets-by-regex
 	#perl -i -pe 's/match\(([^,]*),(?:(\(([^()]|(?2))*\))|([^()]*))\)/echo \$line | match "$1" "$2$4"'"$sources"'/g'
-	perl -pe 's/match\(([^,]*)\s*,\s*"([^"]*)"\)/echo \$line | match "$1" "$2"'"$sources"' $dummy_compile/g'
+	#echo '['$0:$LINENO']' \$1 = \"$1\" >&2
+	#echo '['$0:$LINENO']' \$2 = \"$2\" >&2
+	#echo '['$0:$LINENO']' \$sources = \"$sources\" >&2
+	#echo '['$0:$LINENO']' \$dummy_compile = \"$dummy_compile\" >&2
+	#perl -pe 's/match\(([^,]*)\s*,\s*"([^"]*)"\)/echo \$line | match "$1" "$2"'"$sources"' $dummy_compile/g'
+	perl -pe 's/match\(([^,]*)\s*,\s*"([^"]*)"\)/echo \$line | match "$1" "$2" "$dummy_compile"'"$sources"'/g' #| tee /dev/stderr
 }
 
 batch()
@@ -956,6 +962,7 @@ batch()
 
 match()
 {
+	#echo '['$0:$LINENO']' \$@ = \"$@\"
 	local variable="$1"
 	local expression="$2"
 	local dummy_compile="$3"
@@ -971,6 +978,7 @@ match()
 		local vars="$vars "'${'"$1"'[@]} '
 		shift
 	done
+	#echo '['$0:$LINENO']' vars = \"$vars\"
 	local index=`eval echo $vars | tr \\\t ' ' | tr -s ' ' | tr ' ' \\\n | xargs -L 1 echo | grep -n ^$variable$ | cut -f 1 -d :`
 	if [ "$dummy_compile" == "1" ]
 	then
