@@ -84,31 +84,31 @@ label = function(col, columns="columns", labels.list = labels)
     return(col)
 }
 
-freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0000", "#66BB00", "#0000BB"), comb = combination, sep = "_")
+freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0000", "#66BB00", "#0000BB"), comb = combination, sep = "_", inter=".")
 {
-data.frame = append_combinations(data.frame, comb)
-  out = unique(interaction(data.frame[,col], sep = "."))
-  col = paste(col, collapse = sep)
+  ## Generate a vector of default colors
+  def = colorRampPalette(default)(abs(length(unique(data.frame[,col])) - length(colors[[paste(col, collapse = sep)]])))
+  defindex=1
+  ## Get the list of colors we are interested in
+  colors = colors.list[[paste(col, collapse = sep)]]
+ 
+  ## Keep only unique occurences of rows grouped by col 
+  data.frame = unique(data.frame[,col])
+  ## Add a new column in data frame out of columns whose combined value gets one color
+  data.frame$color = apply(data.frame[,col] , 1, function(x) paste(x, collapse = "."))
+  ## Turn new coloumn to the corresponding color
+  data.frame$color = unlist(lapply(data.frame[,"color"], function(x) {if( x %in% names(colors)) { return (colors[[x]])} else { col = def[[defindex]]; defindex <<- defindex + 1; return(col)}}))
+  ## Replace content by reader-friendly content
+  data.frame = apply_labels(data.frame)
+  ## Associate reader-friendly content to corresponding color
+  data.frame$name = apply(data.frame[,col] , 1, function(x) paste(x, collapse = inter))
+  ## Keep only name and color
+  data.frame = data.frame[,c("name", "color")]
+  ## Form a list of colors from data frame
+  col = data.frame$color
+  ## Index colors by their associated name
+  names(col) = data.frame$name
 
-  def = colorRampPalette(default)(abs(length(out) - length(colors[[col]])))
-  missing = 1
-
-  lst = list()
-  for(i in out)
-  {
-    if(i %in% names(colors.list[[col]]))
-    {
-      lst = c(lst, colors.list[[col]][[i]])
-    }
-    else
-    {
-      warning(paste(c("Could not find color for value ", as.character(i), "."), collapse = ""));
-      out[[i]] = def[i]
-      lst = c(lst, def[missing])
-      missing = missing + 1
-    }
-  }
-
-  return(as.character(lst))
+  return(col)
 }
 
