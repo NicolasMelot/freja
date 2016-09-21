@@ -95,13 +95,13 @@ freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0
   ## Keep only unique occurences of rows grouped by col 
   data.frame = unique(data.frame[,col])
   ## Add a new column in data frame out of columns whose combined value gets one color
-  data.frame$color = apply(data.frame[,col] , 1, function(x) paste(x, collapse = "."))
+  data.frame$color = apply(data.frame[,col] , 1, function(x) paste(trimws(x), collapse = "."))
   ## Turn new coloumn to the corresponding color
   data.frame$color = unlist(lapply(data.frame[,"color"], function(x) {if( x %in% names(colors)) { return (colors[[x]])} else { col = def[[defindex]]; defindex <<- defindex + 1; return(col)}}))
   ## Replace content by reader-friendly content
   data.frame = apply_labels(data.frame)
   ## Associate reader-friendly content to corresponding color
-  data.frame$name = apply(data.frame[,col] , 1, function(x) paste(x, collapse = inter))
+  data.frame$name = apply(data.frame[,col] , 1, function(x) paste(trimws(x), collapse = inter))
   ## Keep only name and color
   data.frame = data.frame[,c("name", "color")]
   ## Form a list of colors from data frame
