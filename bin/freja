@@ -610,6 +610,14 @@ merge_dir()
 	fi
 }
 
+myprintf()
+{
+	str="$1"
+	shift 1
+	perl -e "printf(\"$str\", $@)"
+}
+
+
 compile()
 {
 	local total_instances=`count_args ${compile[@]}`
@@ -693,7 +701,8 @@ compile()
 		#total_time=$(perl -e "printf(\"%.2f\", $(echo "($total_time + $compile_time)"))")
 		total_time=$(echo $instance_stop - $start_time | bc -l)
 		remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $compile_counter) * ($total_time / $compile_counter))"))")
-		info_stop $outcome. $(printf "%.2f" $compile_time) sec finished on $(echo -n `get_date`)\; approx. $(printf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(printf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
+		remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $compile_counter) * ($total_time / $compile_counter))"))")
+		info_stop $outcome. $(myprintf "%.2f" $compile_time) sec finished on $(echo -n `get_date`)\; approx. $(myprintf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(myprintf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
 
 		if [ "x$compile_counter" == "x$restrict_instances" ]; then
 			exit $compile_success
@@ -712,7 +721,7 @@ compile()
 	local stop_time=`date '+%s.%N'`
 	local overall_time=$(echo $stop_time - $start_time | bc -l)
 
-	info $compile_outcome. Compilation took $(printf "%.2f" $overall_time) seconds \($(printf "%.2f" $(echo $overall_time / 60 | bc -l)) minutes\) or $(printf "%.2f" $(echo $overall_time / $total_instances | bc -l)) seconds per compilation setting \($(printf "%.2f" $(echo $overall_time / $total_instances / 60 | bc -l)) minutes\).
+	info $compile_outcome. Compilation took $(myprintf "%.2f" $overall_time) seconds \($(myprintf "%.2f" $(echo $overall_time / 60 | bc -l)) minutes\) or $(myprintf "%.2f" $(echo $overall_time / $total_instances | bc -l)) seconds per compilation setting \($(myprintf "%.2f" $(echo $overall_time / $total_instances / 60 | bc -l)) minutes\).
 
 	return $compile_success
 }
@@ -925,7 +934,7 @@ batch()
 			#local batch_time=$(perl -e "printf(\"%.2f\", $(echo "($batch_time + $run_time)"))")
 			local batch_time=`echo $instance_stop - $start_time | bc -l`
 			local remaining=$(perl -e "printf(\"%.2f\", $(echo "(($total_instances - $instance_number) * ($batch_time / $total_run))"))")
-			info_stop $outcome. $(printf "%.2f" $run_time) sec finished on $(echo -n `get_date`)\; approx. $(printf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(printf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
+			info_stop $outcome. $(myprintf "%.2f" $run_time) sec finished on $(echo -n `get_date`)\; approx. $(myprintf "%.2f" $remaining) sec left \($(perl -e "printf(\"%.2f\", $(myprintf "%.2f" $(echo "($remaining / 60)" | bc -l)))") minutes\)
 
 			run_counter=$(($run_counter + 1))
 		done < <(build_args ${run[@]})
@@ -1219,7 +1228,7 @@ finish() {
 trap finish EXIT 
 
 ## Force decimal separator as a dot "." as in american english
-export LC_NUMERIC="en_US.UTF-8"
+export LC_NUMERIC="en_US.utf8"
 
 ## Fill up undefined options with default values
 if [ "`echo $restrict|xargs echo`" == "" ]
