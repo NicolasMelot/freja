@@ -87,7 +87,7 @@ label = function(col, columns="columns", labels.list = labels)
 freja_colors = function(data.frame, col, colors.list = colors, default = c("#BB0000", "#66BB00", "#0000BB"), comb = combination, sep = "_", inter=".")
 {
   ## Generate a vector of default colors
-  def = colorRampPalette(default)(abs(length(unique(data.frame[,col])) - length(colors[[paste(col, collapse = sep)]])))
+  def = colorRampPalette(default)(abs(dim(unique(data.frame[,col]))[1] - length(colors[[paste(col, collapse = sep)]])))
   defindex=1
   ## Get the list of colors we are interested in
   colors = colors.list[[paste(col, collapse = sep)]]
