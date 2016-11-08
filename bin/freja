@@ -95,10 +95,18 @@ load_variables()
 	fi
 }
 
+## Provides a printf implementation that takes LC_NUMERIC environment variable into account
+myprintf()
+{
+	str="$1"
+	shift 1
+	perl -e "printf(\"$str\", $@)"
+}
+
 ## Returns true if $1 is an integer or a decimal
 is_number()
 {
-	printf %f\\n $1 > /dev/null 2>&1
+	myprintf %f\\n $1 > /dev/null 2>&1
 }
 
 ## Returns true if all space-separated elements of $@ (regardless of double quotes) are an integers or decimal value
@@ -575,7 +583,7 @@ merge_dir()
 						counter=$(($counter + 1))
 						echo -en '"'"'\r'"'"'
 						echo -n "[INFO]" Merging all results to $output_file ... $(( $counter * 100 / $total_instances ))%\ 
-						printf '"'"' \b%.1s'"'"' "$sp"
+						myprintf '"'"' \b%.1s'"'"' "$sp"
 						sp=${sp#?}${sp%???}
 						continue
 					fi'
@@ -592,7 +600,7 @@ merge_dir()
 					counter=$(($counter + 1))
 					echo -en '\r'
 					echo -n '[INFO]' Merging all results to $output_file ... $(( $counter * 100 / $total_instances ))%\ 
-					printf ' \b%.1s' "$sp"
+					myprintf ' \b%.1s' "$sp"
 					sp=${sp#?}${sp%???}
 				done < <(build_values ${run[@]})
 			done < <(build_values ${compile[@]})
@@ -609,14 +617,6 @@ merge_dir()
 		eval ${compile[0]}=""
 	fi
 }
-
-myprintf()
-{
-	str="$1"
-	shift 1
-	perl -e "printf(\"$str\", $@)"
-}
-
 
 compile()
 {
@@ -964,7 +964,7 @@ batch()
 	local stop_time=`date '+%s.%N'`
 	local overall_time=$(echo $stop_time - $start_time | bc -l)
 
-	info $batch_outcome. Batch took $(printf "%.2f" $overall_time) seconds \($(printf "%.2f" $(echo $overall_time / 60 | bc -l)) minutes\) to run, or $(printf "%.2f" $(echo $overall_time / $total_instances | bc -l)) seconds per instance run \($(printf "%.2f" $(echo $overall_time / $total_instances / 60 | bc -l)) minutes\).
+	info $batch_outcome. Batch took $(myprintf "%.2f" $overall_time) seconds \($(myprintf "%.2f" $(echo $overall_time / 60 | bc -l)) minutes\) to run, or $(myprintf "%.2f" $(echo $overall_time / $total_instances | bc -l)) seconds per instance run \($(myprintf "%.2f" $(echo $overall_time / $total_instances / 60 | bc -l)) minutes\).
 
 	return $batch_success
 }
