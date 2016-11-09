@@ -583,7 +583,7 @@ merge_dir()
 						counter=$(($counter + 1))
 						echo -en '"'"'\r'"'"'
 						echo -n "[INFO]" Merging all results to $output_file ... $(( $counter * 100 / $total_instances ))%\ 
-						myprintf '"'"' \b%.1s'"'"' "$sp"
+						printf '"'"' \b%.1s'"'"' "$sp"
 						sp=${sp#?}${sp%???}
 						continue
 					fi'
@@ -600,7 +600,7 @@ merge_dir()
 					counter=$(($counter + 1))
 					echo -en '\r'
 					echo -n '[INFO]' Merging all results to $output_file ... $(( $counter * 100 / $total_instances ))%\ 
-					myprintf ' \b%.1s' "$sp"
+					printf ' \b%.1s' "$sp"
 					sp=${sp#?}${sp%???}
 				done < <(build_values ${run[@]})
 			done < <(build_values ${compile[@]})
