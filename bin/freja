@@ -685,6 +685,7 @@ compile()
 
 		info_start Setting $compile_counter/$restrict_instances: `for i in $(seq 0 $((${#compile[@]} - 1)));do echo "${compile[$i]}=$(echo $args|cut -d ' ' -f $(($i + 1)))"; done`"... "
 		instance_start=`date '+%s.%N'`
+		export $compile_counter
 		bash $script_compile $args 2> >(cat | while read stderr; do silentlog $stderr; done) 1>&2 < /dev/null
 		success=$?
 
